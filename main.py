@@ -93,9 +93,13 @@ class CreativePerformanceApp:
         # Инициализация состояния сессии
         self._initialize_session_state()
         
-        # Обучение модели при первом запуске
-        if not st.session_state.model_trained:
-            self._train_model()
+        # Проверяем, нужно ли обучить модель
+        if not st.session_state.model_trained and hasattr(self.ml_engine, 'is_trained'):
+            if not self.ml_engine.is_trained:
+                # Не обучаем автоматически, позволяем пользователю инициировать
+                st.session_state.model_trained = False
+            else:
+                st.session_state.model_trained = True
     
     def _initialize_session_state(self):
         """Инициализация переменных состояния сессии."""
@@ -116,14 +120,51 @@ class CreativePerformanceApp:
     
     def _train_model(self):
         """Обучение ML модели."""
-        with st.spinner('Инициализация модели машинного обучения...'):
-            try:
-                training_results = self.ml_engine.train_models()
+        try:
+            # Проверяем, не обучена ли модель уже
+            if hasattr(self.ml_engine, 'is_trained') and self.ml_engine.is_trained:
                 st.session_state.model_trained = True
-                st.session_state.training_results = training_results
-            except Exception as e:
-                st.error(f"Ошибка при обучении модели: {str(e)}")
-                st.session_state.model_trained = False
+                return
+            
+            # Показываем прогресс только если модель не обучена
+            progress_container = st.empty()
+            with progress_container.container():
+                with st.spinner('🤖 Инициализация модели машинного обучения...'):
+                    st.info("Генерация синтетических данных для обучения...")
+                    training_results = self.ml_engine.train_models()
+                    
+                    # Проверяем результаты обучения
+                    if training_results and len(training_results) > 0:
+                        st.session_state.model_trained = True
+                        st.session_state.training_results = training_results
+                        st.success("✅ Модель успешно обучена!")
+                        
+                        # Показываем краткую статистику
+                        with st.expander("📊 Статистика обучения", expanded=False):
+                            for target, models in training_results.items():
+                                st.write(f"**{target.upper()}:**")
+                                for model_name, metrics in models.items():
+                                    r2 = metrics.get('r2_score', 0)
+                                    st.write(f"  - {model_name}: R² = {r2:.3f}")
+                    else:
+                        st.error("❌ Обучение завершилось, но результаты недоступны")
+                        st.session_state.model_trained = False
+            
+            # Очищаем прогресс после завершения
+            progress_container.empty()
+            
+        except Exception as e:
+            st.error(f"❌ Ошибка при обучении модели: {str(e)}")
+            st.session_state.model_trained = False
+            
+            # Показываем детали ошибки для отладки
+            with st.expander("🔍 Детали ошибки"):
+                st.code(str(e))
+                st.write("Попробуйте перезапустить приложение или проверить установку зависимостей.")
+            
+            # Показываем кнопку для повторной попытки
+            if st.button("🔄 Повторить обучение модели"):
+                st.rerun()
     
     def run(self):
         """Запуск основного приложения."""
@@ -177,6 +218,10 @@ class CreativePerformanceApp:
                 st.success("✅ Модель обучена")
             else:
                 st.error("❌ Модель не обучена")
+                if st.button("🔄 Обучить модель", key="retrain_sidebar"):
+                    with st.spinner("Обучение модели..."):
+                        self._train_model()
+                    st.rerun()
             
             # Статус изображения
             if st.session_state.image_uploaded:
@@ -205,6 +250,15 @@ class CreativePerformanceApp:
         """Отрисовка главной страницы."""
         col1, col2 = st.columns([2, 1])
         
+        # Проверяем состояние модели и показываем предупреждение если нужно
+        if not st.session_state.model_trained:
+            st.warning("""
+            ⚠️ **Модель машинного обучения не обучена**
+            
+            Для работы системы необходимо сначала обучить модель на синтетических данных.
+            Это займет несколько секунд и выполняется только один раз.
+            """)
+        
         with col1:
             st.markdown("""
             ## 🎨 Добро пожаловать в Creative Performance Predictor!
@@ -231,9 +285,15 @@ class CreativePerformanceApp:
             """)
             
             # Кнопка быстрого старта
-            if st.button("🚀 Начать анализ", type="primary", key="quick_start"):
-                st.session_state.current_page = 'Анализ изображения'
-                st.rerun()
+            if st.session_state.model_trained:
+                if st.button("🚀 Начать анализ", type="primary", key="quick_start"):
+                    st.session_state.current_page = 'Анализ изображения'
+                    st.rerun()
+            else:
+                st.warning("⚠️ Модель не готова к работе")
+                if st.button("🤖 Обучить модель", type="primary", key="train_model_main"):
+                    self._train_model()
+                    st.rerun()
         
         with col2:
             st.markdown("### 📊 Возможности системы")
@@ -299,8 +359,14 @@ class CreativePerformanceApp:
                     st.write(f"**Размер файла:** {uploaded_file.size / 1024:.1f} KB")
                 
                 # Кнопка запуска анализа
-                if st.button("🚀 Запустить анализ", type="primary", key="start_analysis"):
-                    self._perform_analysis(image)
+                if st.session_state.model_trained:
+                    if st.button("🚀 Запустить анализ", type="primary", key="start_analysis"):
+                        self._perform_analysis(image)
+                else:
+                    st.error("❌ Модель не обучена. Необходимо сначала обучить модель.")
+                    if st.button("🤖 Обучить модель сейчас", type="primary", key="train_before_analysis"):
+                        self._train_model()
+                        st.rerun()
                 
             except Exception as e:
                 st.error(f"Ошибка при загрузке изображения: {str(e)}")
