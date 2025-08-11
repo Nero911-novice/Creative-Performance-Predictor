@@ -143,6 +143,9 @@ class CreativePerformanceApp:
     def _train_model(self):
         """Обучение ML модели."""
         try:
+            # Принудительно инициализируем модели заново
+            self.ml_engine._initialize_models()
+            
             with st.spinner('🤖 Обучение модели машинного обучения...'):
                 # Простое обучение без сложных проверок
                 training_results = self.ml_engine.train_models(quick_mode=True)
@@ -156,6 +159,7 @@ class CreativePerformanceApp:
                 
                 # Показываем статистику
                 with st.expander("📊 Статистика обучения", expanded=False):
+                    st.write(f"**Количество признаков:** {len(self.ml_engine.feature_names)}")
                     for target, models in training_results.items():
                         st.write(f"**{target.upper()}:**")
                         for model_name, metrics in models.items():
@@ -165,7 +169,11 @@ class CreativePerformanceApp:
         except Exception as e:
             st.error(f"❌ Ошибка при обучении модели: {str(e)}")
             st.session_state.model_trained = False
-            self.ml_engine.is_trained = False
+            if hasattr(self, 'ml_engine'):
+                self.ml_engine.is_trained = False
+            
+            with st.expander("🔍 Детали ошибки"):
+                st.code(str(e))
             
             if st.button("🔄 Повторить обучение модели"):
                 st.rerun()
