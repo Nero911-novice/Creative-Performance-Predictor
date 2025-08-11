@@ -759,87 +759,88 @@ class AdvancedImageAnalyzer:
         red_mean = np.mean(self.image_rgb[:, :, 0])
         blue_mean = np.mean(self.image_rgb[:, :, 2])
         return red_mean / (red_mean + blue_mean) if red_mean + blue_mean > 0 else 0.5
-   
-    # === ЗАГЛУШКИ ДЛЯ НЕДОСТАЮЩИХ МЕТОДОВ АНАЛИЗА КОМПОЗИЦИИ ===
-    # Эти методы вызываются в analyze_composition, но не были реализованы.
-    # Мы добавляем их, чтобы приложение не падало.
 
-    def _calculate_visual_balance_advanced(self, objects_data: Dict) -> float:
-       """(ЗАГЛУШКА) Расчет визуального баланса."""
-       # Возвращаем нейтральное значение по умолчанию
-       return 0.65
-
-    def _calculate_composition_complexity_advanced(self) -> float:
-       """(ЗАГЛУШКА) Расчет сложности композиции."""
-       if CV2_AVAILABLE:
-        edges = cv2.Canny(self.image_gray, 50, 150)
-        complexity = np.sum(edges) / (edges.size * 255)
-        return min(complexity * 5, 1.0) # Нормализуем
-       return 0.5 # Возвращаем нейтральное значение
-
-   def _analyze_center_focus_advanced(self, objects_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ центрального фокуса."""
-       return 0.6
-
-   def _detect_leading_lines_advanced(self) -> float:
-       """(ЗАГЛУШКА) Детекция направляющих линий."""
-       return 0.4
-
-   def _calculate_symmetry_advanced(self) -> float:
-       """(ЗАГЛУШКА) Расчет симметрии."""
-       return 0.55
-
-   def _analyze_depth_cues_advanced(self) -> float:
-       """(ЗАГЛУШКА) Анализ глубины изображения."""
-       return 0.45
-
-   def _analyze_golden_ratio(self) -> float:
-       """(ЗАГЛУШКА) Анализ золотого сечения."""
-       return 0.5
-
-   def _analyze_visual_flow(self, objects_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ визуального потока."""
-       return 0.6
-
-   def _analyze_negative_space(self) -> float:
-       """(ЗАГЛУШКА) Анализ негативного пространства."""
-       return 0.7
-
-   def _analyze_composition_dynamics(self, objects_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ динамики композиции."""
-       return 0.5
-
-   def _calculate_text_readability_advanced(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Расчет читаемости текста."""
-       return 0.8
-
-   def _analyze_text_hierarchy_advanced(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ иерархии текста."""
-       return 0.7
-
-   def _analyze_text_positioning_advanced(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ позиционирования текста."""
-       return 0.75
-
-   def _analyze_text_contrast_advanced(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Анализ контрастности текста."""
-       return 0.85
-
-   def _calculate_text_to_image_ratio(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Расчет соотношения текста к изображению."""
-       return 0.1
-
-   def _analyze_font_variety(self, text_data: Dict) -> int:
-       """(ЗАГЛУШКА) Анализ разнообразия шрифтов."""
-       return 2
-
-   def _calculate_text_density(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Расчет плотности текста."""
-       return 0.15
-
-   def _calculate_text_coverage(self, text_data: Dict) -> float:
-       """(ЗАГЛУШКА) Расчет покрытия текста."""
-       return 0.2
 
 # Алиас для обратной совместимости
 ImageAnalyzer = AdvancedImageAnalyzer
+
+# === ЗАГЛУШКИ ДЛЯ НЕДОСТАЮЩИХ МЕТОДОВ АНАЛИЗА КОМПОЗИЦИИ ===
+# Эти методы вызываются в analyze_composition, но не были реализованы.
+# Мы добавляем их, чтобы приложение не падало.
+
+def _calculate_visual_balance_advanced(self, objects_data: Dict) -> float:
+    """(ЗАГЛУШКА) Расчет визуального баланса."""
+    # Возвращаем нейтральное значение по умолчанию
+    return 0.65
+
+def _calculate_composition_complexity_advanced(self) -> float:
+    """(ЗАГЛУШКА) Расчет сложности композиции."""
+    if CV2_AVAILABLE:
+        edges = cv2.Canny(self.image_gray, 50, 150)
+        complexity = np.sum(edges) / (edges.size * 255)
+        return min(complexity * 5, 1.0) # Нормализуем
+    return 0.5 # Возвращаем нейтральное значение
+
+def _analyze_center_focus_advanced(self, objects_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ центрального фокуса."""
+    return 0.6
+
+def _detect_leading_lines_advanced(self) -> float:
+    """(ЗАГЛУШКА) Детекция направляющих линий."""
+    return 0.4
+
+def _calculate_symmetry_advanced(self) -> float:
+    """(ЗАГЛУШКА) Расчет симметрии."""
+    return 0.55
+
+def _analyze_depth_cues_advanced(self) -> float:
+    """(ЗАГЛУШКА) Анализ глубины изображения."""
+    return 0.45
+
+def _analyze_golden_ratio(self) -> float:
+    """(ЗАГЛУШКА) Анализ золотого сечения."""
+    return 0.5
+
+def _analyze_visual_flow(self, objects_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ визуального потока."""
+    return 0.6
+
+def _analyze_negative_space(self) -> float:
+    """(ЗАГЛУШКА) Анализ негативного пространства."""
+    return 0.7
+
+def _analyze_composition_dynamics(self, objects_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ динамики композиции."""
+    return 0.5
+
+def _calculate_text_readability_advanced(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Расчет читаемости текста."""
+    return 0.8
+
+def _analyze_text_hierarchy_advanced(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ иерархии текста."""
+    return 0.7
+
+def _analyze_text_positioning_advanced(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ позиционирования текста."""
+    return 0.75
+
+def _analyze_text_contrast_advanced(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Анализ контрастности текста."""
+    return 0.85
+
+def _calculate_text_to_image_ratio(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Расчет соотношения текста к изображению."""
+    return 0.1
+
+def _analyze_font_variety(self, text_data: Dict) -> int:
+    """(ЗАГЛУШКА) Анализ разнообразия шрифтов."""
+    return 2
+
+def _calculate_text_density(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Расчет плотности текста."""
+    return 0.15
+
+def _calculate_text_coverage(self, text_data: Dict) -> float:
+    """(ЗАГЛУШКА) Расчет покрытия текста."""
+    return 0.2
