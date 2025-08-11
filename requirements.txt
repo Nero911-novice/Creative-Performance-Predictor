@@ -1,37 +1,33 @@
-# requirements_light.txt - ОБЛЕГЧЕННАЯ ВЕРСИЯ ДЛЯ STREAMLIT CLOUD
-# Эта версия работает без тяжелых зависимостей
+# Creative Performance Predictor 2.0 - ОПТИМИЗИРОВАННЫЕ ЗАВИСИМОСТИ
+# Версия для Streamlit Cloud (только CPU)
 
-# ===== ОСНОВНЫЕ ЗАВИСИМОСТИ =====
 streamlit>=1.28.0
 pandas>=2.0.0
 numpy>=1.24.0
 
-# ===== МАШИННОЕ ОБУЧЕНИЕ (ТОЛЬКО ОСНОВНЫЕ) =====
+# --- Машинное обучение ---
 scikit-learn>=1.3.0
-# xgboost>=1.7.0  # Закомментировано - можно включить при необходимости
-
-# ===== ОБРАБОТКА ИЗОБРАЖЕНИЙ (БАЗОВАЯ) =====
-Pillow>=9.0.0
-matplotlib>=3.7.0
-
-# ===== ВИЗУАЛИЗАЦИЯ =====
-plotly>=5.15.0
-
-# ===== НАУЧНЫЕ ВЫЧИСЛЕНИЯ =====
-scipy>=1.11.0
-
-# ===== ДОПОЛНИТЕЛЬНЫЕ =====
+xgboost>=1.7.0
 joblib>=1.3.0
 
-# ===== ПРИМЕЧАНИЯ =====
-# Исключены тяжелые зависимости:
-# - easyocr (требует много времени и места)
-# - ultralytics (YOLO - очень тяжелый)
-# - torch, torchvision (самые тяжелые)
-# - opencv-python (может вызывать проблемы)
+# --- Компьютерное зрение и OCR ---
 
-# Система будет работать в режиме fallback:
-# - Эвристический анализ текста вместо OCR
-# - Базовый анализ композиции без YOLO
-# - Только Random Forest и Gradient Boosting
-# - Все остальные функции работают полностью
+# Указываем PyTorch и Torchvision для CPU, чтобы избежать нехватки памяти
+# Это ключевое исправление для easyocr и ultralytics
+torch==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
+torchvision==0.16.2+cpu --index-url https://download.pytorch.org/whl/cpu
+
+# Основные CV библиотеки
+easyocr>=1.7.0
+opencv-python-headless>=4.8.0
+ultralytics>=8.0.0
+Pillow>=9.0.0
+
+# Fallback OCR
+pytesseract>=0.3.10
+
+# --- Визуализация и вычисления ---
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scipy>=1.11.0
