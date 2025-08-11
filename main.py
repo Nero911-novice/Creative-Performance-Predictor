@@ -689,7 +689,7 @@ class AdvancedCreativePerformanceApp:
             st.plotly_chart(comp_3d_fig, use_container_width=True)
         
         # Стандартный анализ композиции
-        comp_fig = self.visualizer.plot_composition_analysis(composition_data)
+        comp_fig = self.visualizer.plot_composition_analysis_3d(composition_data)
         st.plotly_chart(comp_fig, use_container_width=True)
         
         # Детали композиции
