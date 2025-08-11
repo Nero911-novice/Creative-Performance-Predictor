@@ -1,4 +1,4 @@
-# visualizer.py - РЕВОЛЮЦИОННАЯ ВЕРСИЯ
+# visualizer.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 """
 Модуль визуализации для Creative Performance Predictor.
 Продвинутые интерактивные графики, heatmaps и 3D визуализации.
@@ -220,8 +220,18 @@ class AdvancedVisualizer:
                 for j in range(int(grid_size*0.7), grid_size):
                     attention_map[i,j] += 0.4
         
-        # Нормализация
-        attention_map = (attention_map - attention_map.min()) / (attention_map.max() - attention_map.min())
+        # --- ИСПРАВЛЕНИЕ ОШИБКИ ---
+        # Нормализация с защитой от деления на ноль
+        map_min = attention_map.min()
+        map_max = attention_map.max()
+        map_range = map_max - map_min
+        
+        if map_range > 0:
+            attention_map = (attention_map - map_min) / map_range
+        else:
+            # Если все значения одинаковые, карта будет нулевой
+            attention_map = np.zeros_like(attention_map)
+        # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         fig = go.Figure(data=go.Heatmap(
             z=attention_map, x=x, y=y,
