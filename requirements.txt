@@ -9,16 +9,16 @@ scikit-learn>=1.3.0
 xgboost>=1.7.0
 
 # Image Processing
-opencv-python>=4.8.0
-Pillow>=10.0.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
+opencv-python-headless>=4.5.0
+Pillow>=9.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
 
 # Visualization
-plotly>=5.15.0
+plotly>=5.10.0
 
-# Text Processing
-pytesseract>=0.3.10
+# Text Processing (опционально)
+# pytesseract>=0.3.10
 
 # Utilities
 scipy>=1.11.0
