@@ -1,4 +1,4 @@
-# visualizer.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
+# visualizer.py - РЕВОЛЮЦИОННАЯ ВЕРСИЯ
 """
 Модуль визуализации для Creative Performance Predictor.
 Продвинутые интерактивные графики, heatmaps и 3D визуализации.
@@ -220,21 +220,14 @@ class AdvancedVisualizer:
                 for j in range(int(grid_size*0.7), grid_size):
                     attention_map[i,j] += 0.4
         
-        # --- ИСПРАВЛЕНИЕ ОШИБКИ ---
-        # Нормализация с защитой от деления на ноль
-        map_min = attention_map.min()
-        map_max = attention_map.max()
-        map_range = map_max - map_min
+        # Нормализация
+        attention_map = (attention_map - attention_map.min()) / (attention_map.max() - attention_map.min())
         
-        if map_range > 0:
-            attention_map = (attention_map - map_min) / map_range
-        else:
-            # Если все значения одинаковые, карта будет нулевой
-            attention_map = np.zeros_like(attention_map)
-        # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-        
+        # ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными параметрами colorbar
         fig = go.Figure(data=go.Heatmap(
-            z=attention_map, x=x, y=y,
+            z=attention_map, 
+            x=x, 
+            y=y,
             colorscale=[
                 [0, 'rgba(255,255,255,0)'],
                 [0.3, 'rgba(255,255,0,0.3)'],
@@ -242,7 +235,14 @@ class AdvancedVisualizer:
                 [1, 'rgba(255,0,0,0.9)']
             ],
             showscale=True,
-            colorbar=dict(title="Интенсивность внимания", titleside="right")
+            colorbar=dict(
+                title=dict(
+                    text="Интенсивность внимания",
+                    side="right"
+                ),
+                orientation="v",
+                len=0.9
+            )
         ))
         
         # Добавляем сетку правила третей
@@ -253,16 +253,20 @@ class AdvancedVisualizer:
         
         # Добавляем точки силы
         fig.add_trace(go.Scatter(
-            x=[33.33, 66.67, 33.33, 66.67], y=[33.33, 33.33, 66.67, 66.67],
-            mode='markers', marker=dict(size=12, color='white', symbol='x'),
-            name='Точки силы', showlegend=True
+            x=[33.33, 66.67, 33.33, 66.67], 
+            y=[33.33, 33.33, 66.67, 66.67],
+            mode='markers', 
+            marker=dict(size=12, color='white', symbol='x'),
+            name='Точки силы', 
+            showlegend=True
         ))
         
         fig.update_layout(
             title="🎯 Карта внимания пользователей",
             xaxis_title="Горизонтальная позиция (%)",
             yaxis_title="Вертикальная позиция (%)",
-            height=500, template=self.plot_config['template'],
+            height=500, 
+            template=self.plot_config['template'],
             xaxis=dict(range=[0, 100]),
             yaxis=dict(range=[0, 100], scaleanchor="x", scaleratio=1)
         )
