@@ -13,6 +13,7 @@ import time
 from typing import Dict, Any, Optional
 import warnings
 import traceback
+import plotly.graph_objects as go
 warnings.filterwarnings('ignore')
 
 # Попытка импорта с обработкой ошибок
