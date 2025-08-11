@@ -151,14 +151,8 @@ creative-performance-predictor/
 4. Push в branch (`git push origin feature/AmazingFeature`)
 5. Создайте Pull Request
 
-## 📝 Лицензия
 
-Распространяется под лицензией MIT. См. `LICENSE` для дополнительной информации.
 
-## 📞 Контакты
-
-- **GitHub**: [your-username](https://github.com/your-username)
-- **Email**: your-email@example.com
 
 ---
 
