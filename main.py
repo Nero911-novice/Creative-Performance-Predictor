@@ -93,6 +93,9 @@ class CreativePerformanceApp:
         # Инициализация состояния сессии
         self._initialize_session_state()
         
+        # Попытка загрузить предобученную модель
+        self._try_load_pretrained_model()
+        
         # Проверяем, нужно ли обучить модель
         if not st.session_state.model_trained and hasattr(self.ml_engine, 'is_trained'):
             if not self.ml_engine.is_trained:
@@ -100,6 +103,36 @@ class CreativePerformanceApp:
                 st.session_state.model_trained = False
             else:
                 st.session_state.model_trained = True
+    
+    def _try_load_pretrained_model(self):
+        """Попытка загрузить предобученную модель."""
+        try:
+            import pickle
+            import os
+            
+            if os.path.exists('quick_model.pkl'):
+                with open('quick_model.pkl', 'rb') as f:
+                    model_data = pickle.load(f)
+                
+                # Загружаем данные в ML engine
+                if 'models' in model_data:
+                    self.ml_engine.models.update(model_data['models'])
+                if 'scalers' in model_data:
+                    self.ml_engine.scalers.update(model_data['scalers'])
+                if 'feature_names' in model_data:
+                    self.ml_engine.feature_names = model_data['feature_names']
+                if 'is_trained' in model_data:
+                    self.ml_engine.is_trained = model_data['is_trained']
+                    st.session_state.model_trained = True
+                    
+                # Показываем уведомление только один раз
+                if 'pretrained_loaded' not in st.session_state:
+                    st.session_state.pretrained_loaded = True
+                    st.info("ℹ️ Загружена предобученная модель")
+        
+        except Exception as e:
+            # Тихо игнорируем ошибки загрузки предобученной модели
+            pass
     
     def _initialize_session_state(self):
         """Инициализация переменных состояния сессии."""
@@ -126,17 +159,50 @@ class CreativePerformanceApp:
                 st.session_state.model_trained = True
                 return
             
-            # Показываем прогресс только если модель не обучена
+            # Контейнер для управления процессом
             progress_container = st.empty()
+            
             with progress_container.container():
-                with st.spinner('🤖 Инициализация модели машинного обучения...'):
-                    st.info("Генерация синтетических данных для обучения...")
-                    training_results = self.ml_engine.train_models()
+                # Добавляем кнопку отмены
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                
+                with col2:
+                    if st.button("❌ Прервать", key="cancel_training"):
+                        progress_container.empty()
+                        st.warning("⚠️ Обучение прервано пользователем")
+                        return
+                
+                try:
+                    # Этап 1: Генерация данных
+                    status_text.text("📊 Генерация обучающих данных...")
+                    progress_bar.progress(20)
+                    
+                    # Быстрый режим - меньше данных
+                    synthetic_data = self.ml_engine.generate_synthetic_data(n_samples=300)
+                    
+                    # Этап 2: Обучение модели
+                    status_text.text("🤖 Обучение модели...")
+                    progress_bar.progress(60)
+                    
+                    # Быстрое обучение
+                    training_results = self.ml_engine.train_models(synthetic_data, quick_mode=True)
+                    
+                    # Этап 3: Завершение
+                    status_text.text("✅ Завершение...")
+                    progress_bar.progress(100)
                     
                     # Проверяем результаты обучения
                     if training_results and len(training_results) > 0:
                         st.session_state.model_trained = True
                         st.session_state.training_results = training_results
+                        
+                        # Показываем успех
+                        status_text.text("")
+                        progress_bar.empty()
                         st.success("✅ Модель успешно обучена!")
                         
                         # Показываем краткую статистику
@@ -149,6 +215,11 @@ class CreativePerformanceApp:
                     else:
                         st.error("❌ Обучение завершилось, но результаты недоступны")
                         st.session_state.model_trained = False
+                
+                except Exception as training_error:
+                    status_text.text("")
+                    progress_bar.empty()
+                    raise training_error
             
             # Очищаем прогресс после завершения
             progress_container.empty()
@@ -157,10 +228,17 @@ class CreativePerformanceApp:
             st.error(f"❌ Ошибка при обучении модели: {str(e)}")
             st.session_state.model_trained = False
             
+            # Показываем возможные решения
+            st.markdown("""
+            **🔧 Возможные решения:**
+            1. Попробуйте перезапустить приложение
+            2. Проверьте установку зависимостей: `pip install --upgrade scikit-learn pandas numpy`
+            3. Освободите оперативную память, закрыв другие программы
+            """)
+            
             # Показываем детали ошибки для отладки
             with st.expander("🔍 Детали ошибки"):
                 st.code(str(e))
-                st.write("Попробуйте перезапустить приложение или проверить установку зависимостей.")
             
             # Показываем кнопку для повторной попытки
             if st.button("🔄 Повторить обучение модели"):
