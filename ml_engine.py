@@ -19,13 +19,14 @@ import json
 from datetime import datetime, timedelta
 warnings.filterwarnings('ignore')
 
-# Безопасный импорт XGBoost
+# Безопасный импорт XGBoost (ОБЛЕГЧЕННАЯ ВЕРСИЯ)
+XGBOOST_AVAILABLE = False
 try:
     import xgboost as xgb
     XGBOOST_AVAILABLE = True
+    print("✅ XGBoost доступен для продвинутого ML")
 except ImportError:
-    XGBOOST_AVAILABLE = False
-    print("Warning: XGBoost недоступен. Используются альтернативные модели.")
+    print("ℹ️ XGBoost недоступен. Используются Random Forest и Gradient Boosting.")
 
 from config import (
     ML_MODELS, PERFORMANCE_METRICS, SYNTHETIC_DATA, 
