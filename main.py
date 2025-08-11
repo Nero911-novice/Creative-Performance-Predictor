@@ -45,7 +45,6 @@ st.set_page_config(
 if CUSTOM_CSS:
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# --- ИСПРАВЛЕНИЕ: Кэширование ресурсов для сохранения состояния ---
 @st.cache_resource
 def get_app_engines():
     """
@@ -56,7 +55,6 @@ def get_app_engines():
     recommender = RecommendationEngine()
     ml_engine = MLEngine()
 
-    # Обучаем модель, если она еще не обучена
     if not ml_engine.is_trained:
         with st.spinner('🤖 Первичная настройка и обучение модели... Это может занять минуту.'):
             training_results = ml_engine.train_models(quick_mode=True)
@@ -72,11 +70,9 @@ class CreativePerformanceApp:
     def __init__(self):
         """Инициализация приложения и компонентов."""
         if not DEPENDENCIES_OK:
-            st.stop() # Прерываем выполнение, если зависимости не загружены
+            st.stop()
             
         self.analyzer, self.ml_engine, self.visualizer, self.recommender = get_app_engines()
-        
-        # Инициализация состояния сессии
         self._initialize_session_state()
     
     def _initialize_session_state(self):
@@ -98,9 +94,7 @@ class CreativePerformanceApp:
     
     def run(self):
         """Запуск основного приложения."""
-        st.markdown(f'<h1 class="main-header">{PAGE_ICON} {APP_TITLE}</h1>', 
-                   unsafe_allow_html=True)
-        
+        st.markdown(f'<h1 class="main-header">{PAGE_ICON} {APP_TITLE}</h1>', unsafe_allow_html=True)
         self._render_sidebar()
         
         page = st.session_state.get('current_page', 'Главная')
@@ -136,22 +130,18 @@ class CreativePerformanceApp:
                     st.rerun()
             
             st.markdown("---")
-            
             st.markdown("### 📈 Статус системы")
             
-            # Статус модели
             if self.ml_engine.is_trained:
                 st.success("✅ Модель готова к работе")
             else:
                 st.warning("⏳ Модель обучается...")
 
-            # Статус изображения
             if st.session_state.image_uploaded:
                 st.success("✅ Изображение загружено")
             else:
                 st.info("📤 Загрузите изображение")
             
-            # Статус анализа
             if st.session_state.analysis_completed:
                 st.success("✅ Анализ завершен")
             else:
@@ -170,16 +160,11 @@ class CreativePerformanceApp:
         
         with col1:
             st.markdown("## 🎨 Добро пожаловать в Creative Performance Predictor!")
-            st.markdown("""
-            Это интеллектуальная система для анализа и оптимизации креативных материалов 
-            с использованием компьютерного зрения и машинного обучения.
-            """)
+            st.markdown("Это интеллектуальная система для анализа и оптимизации креативных материалов с использованием компьютерного зрения и машинного обучения.")
             st.markdown("### 🔍 Что умеет система:")
-            st.markdown("""
-            - **Анализ изображений**: извлечение цветовых, композиционных и текстовых характеристик.
-            - **Предсказание эффективности**: прогноз CTR, конверсий и вовлеченности.
-            - **Персонализированные рекомендации**: конкретные советы по улучшению креативов.
-            """)
+            st.markdown("- **Анализ изображений**: извлечение цветовых, композиционных и текстовых характеристик.\n"
+                        "- **Предсказание эффективности**: прогноз CTR, конверсий и вовлеченности.\n"
+                        "- **Персонализированные рекомендации**: конкретные советы по улучшению креативов.")
             
             if st.button("🚀 Начать анализ", type="primary"):
                 st.session_state.current_page = 'Анализ изображения'
@@ -194,18 +179,12 @@ class CreativePerformanceApp:
                 ("📱", "Форматы", "JPG, PNG, WEBP")
             ]
             for icon, metric, value in metrics_data:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <h4>{icon} {metric}</h4>
-                    <p>{value}</p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f'<div class="metric-card"><h4>{icon} {metric}</h4><p>{value}</p></div>', unsafe_allow_html=True)
 
     def _render_analysis_page(self):
         """Отрисовка страницы анализа изображения."""
         st.header("🔍 Анализ креативного материала")
         
-        # Добавляем выбор категории и региона
         col1, col2 = st.columns(2)
         with col1:
             category = st.selectbox("Выберите категорию креатива", ['Автомобили', 'E-commerce', 'Финансы', 'Технологии'])
@@ -215,11 +194,7 @@ class CreativePerformanceApp:
         st.session_state.category = category
         st.session_state.region = region
 
-        uploaded_file = st.file_uploader(
-            "Загрузите изображение для анализа",
-            type=SUPPORTED_IMAGE_FORMATS,
-            help=f"Поддерживаемые форматы: {', '.join(SUPPORTED_IMAGE_FORMATS)}. Макс. размер: {MAX_IMAGE_SIZE // (1024*1024)}MB"
-        )
+        uploaded_file = st.file_uploader("Загрузите изображение для анализа", type=SUPPORTED_IMAGE_FORMATS, help=f"Поддерживаемые форматы: {', '.join(SUPPORTED_IMAGE_FORMATS)}. Макс. размер: {MAX_IMAGE_SIZE // (1024*1024)}MB")
         
         if uploaded_file is not None:
             if uploaded_file.size > MAX_IMAGE_SIZE:
@@ -272,16 +247,12 @@ class CreativePerformanceApp:
                 return
             
             color_analysis = self.analyzer.analyze_colors()
-            
             update_progress(30, "📐 Анализ композиции...")
             composition_analysis = self.analyzer.analyze_composition()
-
             update_progress(50, "📝 Анализ текстовых элементов...")
             text_analysis = self.analyzer.analyze_text()
-
             update_progress(70, "🧠 Подготовка данных для ML...")
             image_features = self.analyzer.get_all_features()
-            # Добавляем категорию и регион в признаки
             image_features['category'] = category
             image_features['region'] = region
             st.session_state.image_features = image_features
@@ -289,17 +260,13 @@ class CreativePerformanceApp:
             update_progress(80, "🔮 Предсказание эффективности...")
             predictions = self.ml_engine.predict(image_features)
             confidence_intervals = self.ml_engine.get_prediction_confidence(image_features)
-            
             update_progress(90, "💡 Генерация рекомендаций...")
             recommendations = self.recommender.generate_recommendations(image_features, predictions)
             
             st.session_state.analysis_results = {
-                'color_analysis': color_analysis,
-                'composition_analysis': composition_analysis,
-                'text_analysis': text_analysis,
-                'image_features': image_features,
-                'predictions': predictions,
-                'confidence_intervals': confidence_intervals,
+                'color_analysis': color_analysis, 'composition_analysis': composition_analysis,
+                'text_analysis': text_analysis, 'image_features': image_features,
+                'predictions': predictions, 'confidence_intervals': confidence_intervals,
                 'recommendations': recommendations
             }
             st.session_state.predictions = predictions
@@ -332,34 +299,25 @@ class CreativePerformanceApp:
         predictions = st.session_state.predictions
         
         with col1:
-            ctr_value = predictions.get('ctr', 0) * 100
-            st.metric("CTR", f"{ctr_value:.2f}%")
+            st.metric("CTR", f"{predictions.get('ctr', 0) * 100:.2f}%")
         with col2:
-            conv_value = predictions.get('conversion_rate', 0) * 100
-            st.metric("Конверсия", f"{conv_value:.2f}%")
+            st.metric("Конверсия", f"{predictions.get('conversion_rate', 0) * 100:.2f}%")
         with col3:
-            eng_value = predictions.get('engagement', 0) * 100
-            st.metric("Вовлеченность", f"{eng_value:.2f}%")
+            st.metric("Вовлеченность", f"{predictions.get('engagement', 0) * 100:.2f}%")
         with col4:
             explanation = self.ml_engine.explain_prediction(st.session_state.image_features)
             st.metric("Общая оценка", explanation['performance_category'])
         
         st.markdown("---")
         
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "🔮 Предсказания", "🎨 Цветовой анализ", "📐 Композиция", "📝 Текст"
-        ])
+        tab1, tab2, tab3, tab4 = st.tabs(["🔮 Предсказания", "🎨 Цветовой анализ", "📐 Композиция", "📝 Текст"])
         
         analysis_results = st.session_state.analysis_results
         
         with tab1:
             st.subheader("Предсказания эффективности и ключевые факторы")
-            
-            pred_fig = self.visualizer.plot_performance_prediction(
-                predictions, analysis_results.get('confidence_intervals')
-            )
+            pred_fig = self.visualizer.plot_performance_prediction(predictions, analysis_results.get('confidence_intervals'))
             st.plotly_chart(pred_fig, use_container_width=True)
-            
             feature_importance = self.ml_engine.get_feature_importance('ctr')
             if feature_importance:
                 importance_fig = self.visualizer.plot_feature_importance(feature_importance)
@@ -368,15 +326,13 @@ class CreativePerformanceApp:
         with tab2:
             st.subheader("Анализ цветовых характеристик")
             if 'color_analysis' in analysis_results:
-                color_data = analysis_results['color_analysis']
-                color_fig = self.visualizer.plot_color_analysis(color_data)
+                color_fig = self.visualizer.plot_color_analysis(analysis_results['color_analysis'])
                 st.plotly_chart(color_fig, use_container_width=True)
         
         with tab3:
             st.subheader("Анализ композиции")
             if 'composition_analysis' in analysis_results:
-                comp_data = analysis_results['composition_analysis']
-                comp_fig = self.visualizer.plot_composition_analysis(comp_data)
+                comp_fig = self.visualizer.plot_composition_analysis(analysis_results['composition_analysis'])
                 st.plotly_chart(comp_fig, use_container_width=True)
 
         with tab4:
@@ -385,10 +341,10 @@ class CreativePerformanceApp:
                 text_data = analysis_results['text_analysis']
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Количество текстовых блоков", text_data.get('text_amount', 0))
-                    st.metric("Общее количество символов", text_data.get('total_characters', 0))
+                    st.metric("Текстовых блоков", text_data.get('text_amount', 0))
+                    st.metric("Символов", text_data.get('total_characters', 0))
                     cta_status = "✅ Есть" if text_data.get('has_cta', False) else "❌ Нет"
-                    st.metric("Призыв к действию (CTA)", cta_status)
+                    st.metric("Призыв к действию", cta_status)
                 with col2:
                     st.progress(text_data.get('readability_score', 0), text=f"Читаемость: {text_data.get('readability_score', 0):.2f}")
                     st.progress(text_data.get('text_hierarchy', 0), text=f"Иерархия: {text_data.get('text_hierarchy', 0):.2f}")
@@ -406,7 +362,6 @@ class CreativePerformanceApp:
             return
         
         st.header("💡 Рекомендации по улучшению креатива")
-        
         recommendations = st.session_state.recommendations
         if not recommendations:
             st.success("🎉 Отличная работа! Критических рекомендаций не найдено.")
@@ -429,19 +384,13 @@ class CreativePerformanceApp:
     def _render_about_page(self):
         """Отрисовка страницы 'О проекте'."""
         st.header("ℹ️ О проекте Creative Performance Predictor")
-        st.markdown(f"""
-        **Версия {APP_VERSION}**
-
-        Это интеллектуальная система, которая использует компьютерное зрение и машинное обучение для анализа 
-        рекламных креативов и предсказания их эффективности.
-
-        ### 🛠 Технологический стек
-        - **Frontend:** Streamlit
-        - **Machine Learning:** Scikit-learn
-        - **Computer Vision:** OpenCV, Pillow
-        - **Data Processing:** Pandas, NumPy
-        - **Visualization:** Plotly
-        """)
+        st.markdown(f"**Версия {APP_VERSION}**\n\n"
+                    "Это интеллектуальная система, которая использует компьютерное зрение и машинное обучение для анализа "
+                    "рекламных креативов и предсказания их эффективности.\n\n"
+                    "### 🛠 Технологический стек\n"
+                    "- **Frontend:** Streamlit\n- **Machine Learning:** Scikit-learn\n"
+                    "- **Computer Vision:** OpenCV, Pillow\n- **Data Processing:** Pandas, NumPy\n"
+                    "- **Visualization:** Plotly")
         
         if 'training_results' in st.session_state:
             with st.expander("📊 Метрики качества модели (R² score)"):
@@ -471,8 +420,7 @@ class CreativePerformanceApp:
             
             button_x, button_y = width / 2, height - 100
             button_w, button_h = 200, 60
-            draw.rectangle([button_x - button_w/2, button_y - button_h/2, 
-                            button_x + button_w/2, button_y + button_h/2], fill="red")
+            draw.rectangle([button_x - button_w/2, button_y - button_h/2, button_x + button_w/2, button_y + button_h/2], fill="red")
             
             cta_text = "BUY NOW"
             cta_bbox = draw.textbbox((0, 0), cta_text, font=font_medium)
@@ -489,247 +437,4 @@ class CreativePerformanceApp:
 if __name__ == "__main__":
     if DEPENDENCIES_OK:
         app = CreativePerformanceApp()
-        app.run()```
-
----
-### **ФАЙЛ: `ml_engine.py`**
-```python
-# ml_engine.py
-"""
-Модуль машинного обучения для Creative Performance Predictor.
-Обучает модели предсказания эффективности креативов.
-"""
-
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-from sklearn.base import clone
-from typing import Dict, List, Tuple, Any
-import warnings
-warnings.filterwarnings('ignore')
-
-from config import (
-    ML_MODELS, PERFORMANCE_METRICS, SYNTHETIC_DATA, FEATURE_IMPORTANCE_THRESHOLD
-)
-
-class MLEngine:
-    """
-    Движок машинного обучения для предсказания эффективности креативов.
-    Включает обучение моделей, предсказания и объяснения результатов.
-    """
-    
-    def __init__(self):
-        self.models: Dict[str, Dict[str, Any]] = {} # Формат: {model_name: {target: model_instance}}
-        self.scaler = StandardScaler()
-        self.feature_names: List[str] = []
-        self.is_trained = False
-        self.feature_importance: Dict[str, Dict[str, float]] = {}
-        self._initialize_models()
-        
-    def _initialize_models(self):
-        """Инициализация контейнеров для моделей."""
-        self.models['random_forest'] = {}
-
-    def generate_synthetic_data(self, n_samples: int = None) -> pd.DataFrame:
-        """Генерация синтетических данных для обучения модели."""
-        if n_samples is None:
-            n_samples = SYNTHETIC_DATA['n_samples']
-            
-        np.random.seed(SYNTHETIC_DATA['random_state'])
-        
-        data = {
-            'brightness': np.random.beta(2, 2, n_samples), 'saturation': np.random.beta(2, 3, n_samples),
-            'contrast_score': np.random.beta(3, 2, n_samples), 'color_temperature': np.random.beta(2, 2, n_samples),
-            'harmony_score': np.random.beta(3, 2, n_samples), 'warm_cool_ratio': np.random.beta(2, 2, n_samples),
-            'rule_of_thirds_score': np.random.beta(2, 3, n_samples), 'visual_balance_score': np.random.beta(3, 2, n_samples),
-            'composition_complexity': np.random.beta(2, 3, n_samples), 'center_focus_score': np.random.beta(2, 2, n_samples),
-            'leading_lines_score': np.random.beta(1, 4, n_samples), 'symmetry_score': np.random.beta(2, 3, n_samples),
-            'depth_perception': np.random.beta(2, 2, n_samples), 'readability_score': np.random.beta(3, 2, n_samples),
-            'text_hierarchy': np.random.beta(3, 2, n_samples), 'text_positioning': np.random.beta(2, 2, n_samples),
-            'text_contrast': np.random.beta(3, 2, n_samples), 'has_cta': np.random.binomial(1, 0.7, n_samples),
-            'color_diversity': np.clip(np.random.poisson(3, n_samples), 1, 10) / 10.0,
-            'text_amount': np.clip(np.random.poisson(3, n_samples), 0, 10) / 10.0,
-            'total_characters': np.clip(np.random.poisson(50, n_samples), 0, 200) / 200.0,
-            'aspect_ratio': np.clip(np.random.lognormal(0, 0.3, n_samples), 0.1, 5.0) / 5.0,
-            'image_size_score': np.random.beta(2, 2, n_samples),
-            'category': np.random.choice(['Автомобили', 'E-commerce', 'Финансы', 'Технологии'], n_samples),
-            'region': np.random.choice(['Россия', 'США', 'Европа'], n_samples)
-        }
-        
-        df = pd.DataFrame(data)
-        return self._generate_target_metrics(df)
-    
-    def _generate_target_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Генерация целевых метрик эффективности на основе признаков."""
-        noise = SYNTHETIC_DATA['noise_level']
-        n = len(df)
-
-        ctr_base = 0.3*df['brightness'] + 0.2*df['contrast_score'] + 0.3*df['has_cta'] + 0.1*df['rule_of_thirds_score']
-        df['ctr'] = np.clip(ctr_base + np.random.normal(0, noise, n), 0.001, 0.1)
-
-        conv_base = 0.4*df['readability_score'] + 0.4*df['has_cta'] + 0.2*df['text_contrast']
-        df['conversion_rate'] = np.clip(conv_base + np.random.normal(0, noise, n), 0.001, 0.5)
-
-        eng_base = 0.4*df['harmony_score'] + 0.3*df['saturation'] - 0.2*df['composition_complexity']
-        df['engagement'] = np.clip(eng_base + np.random.normal(0, noise, n), 0.01, 1.0)
-        
-        return df
-
-    def _prepare_and_get_feature_names(self, df: pd.DataFrame) -> List[str]:
-        """Получает список всех возможных колонок после OHE."""
-        df_encoded = pd.get_dummies(df, columns=['category', 'region'], prefix=['cat', 'reg'])
-        return [col for col in df_encoded.columns if col not in ['ctr', 'conversion_rate', 'engagement']]
-
-    def train_models(self, df: pd.DataFrame = None, quick_mode: bool = True) -> Dict[str, Any]:
-        """Обучение отдельных моделей для каждой целевой метрики."""
-        if df is None:
-            sample_size = 500 if quick_mode else 2000
-            df = self.generate_synthetic_data(sample_size)
-        
-        # Получаем полный список фичей до разделения данных
-        self.feature_names = self._prepare_and_get_feature_names(df)
-        
-        df_encoded = pd.get_dummies(df, columns=['category', 'region'], prefix=['cat', 'reg'])
-        # Выравниваем колонки
-        for col in self.feature_names:
-            if col not in df_encoded.columns:
-                df_encoded[col] = 0
-        df_encoded = df_encoded[self.feature_names + ['ctr', 'conversion_rate', 'engagement']]
-
-        X = df_encoded[self.feature_names].values
-        
-        # Обучаем скалер ОДИН РАЗ на всех данных
-        self.scaler.fit(X)
-        X_scaled = self.scaler.transform(X)
-        
-        targets = ['ctr', 'conversion_rate', 'engagement']
-        results = {}
-        model_name = 'random_forest'
-        
-        for target in targets:
-            y = df_encoded[target].values
-            
-            X_train, X_test, y_train, y_test = train_test_split(
-                X_scaled, y, test_size=0.2, random_state=42
-            )
-            
-            base_model_params = ML_MODELS[model_name]
-            if quick_mode:
-                base_model_params['n_estimators'] = 50
-                base_model_params['max_depth'] = 7
-            
-            model = RandomForestRegressor(**base_model_params)
-            model.fit(X_train, y_train)
-            
-            self.models[model_name][target] = model
-            
-            y_pred = model.predict(X_test)
-            r2 = r2_score(y_test, y_pred)
-            results[target] = {model_name: {'r2_score': f"{r2:.3f}"}}
-            
-            importance_key = f"{target}_{model_name}"
-            self.feature_importance[importance_key] = dict(zip(self.feature_names, model.feature_importances_))
-        
-        self.is_trained = True
-        return results
-
-    def _prepare_single_prediction_df(self, features: Dict[str, Any]) -> pd.DataFrame:
-        """Подготовка одного образца для предсказания с корректным OHE."""
-        df = pd.DataFrame([features])
-        df_encoded = pd.get_dummies(df, columns=['category', 'region'], prefix=['cat', 'reg'])
-        
-        for col in self.feature_names:
-            if col not in df_encoded.columns:
-                df_encoded[col] = 0
-        
-        return df_encoded[self.feature_names]
-
-    def predict(self, features: Dict[str, Any], model_name: str = 'random_forest') -> Dict[str, float]:
-        """Предсказание эффективности с использованием правильных моделей."""
-        if not self.is_trained or not self.feature_names:
-            raise RuntimeError("Модель не обучена. Невозможно сделать предсказание.")
-        
-        feature_df = self._prepare_single_prediction_df(features)
-        feature_vector_scaled = self.scaler.transform(feature_df.values)
-        
-        predictions = {}
-        targets = ['ctr', 'conversion_rate', 'engagement']
-
-        for target in targets:
-            if target in self.models[model_name]:
-                model = self.models[model_name][target]
-                pred_value = model.predict(feature_vector_scaled)[0]
-                
-                min_val = PERFORMANCE_METRICS[target]['min']
-                max_val = PERFORMANCE_METRICS[target]['max']
-                predictions[target] = np.clip(pred_value, min_val, max_val)
-            else:
-                predictions[target] = 0.0
-
-        return predictions
-
-    def get_prediction_confidence(self, features: Dict[str, Any]) -> Dict[str, Tuple[float, float]]:
-        """Получить доверительные интервалы для предсказаний."""
-        predictions = self.predict(features)
-        intervals = {}
-        margin = 0.25
-
-        for target, pred_value in predictions.items():
-            lower_bound = max(PERFORMANCE_METRICS[target]['min'], pred_value * (1 - margin))
-            upper_bound = min(PERFORMANCE_METRICS[target]['max'], pred_value * (1 + margin))
-            intervals[target] = (lower_bound, upper_bound)
-            
-        return intervals
-
-    def get_feature_importance(self, target: str = 'ctr', model_name: str = 'random_forest') -> List[Tuple[str, float]]:
-        """Получить важность признаков для конкретной модели и цели."""
-        importance_key = f"{target}_{model_name}"
-        if importance_key not in self.feature_importance:
-            return []
-        
-        importance_dict = self.feature_importance[importance_key]
-        filtered = [(f, i) for f, i in importance_dict.items() if i >= FEATURE_IMPORTANCE_THRESHOLD]
-        filtered.sort(key=lambda x: x[1], reverse=True)
-        
-        return filtered[:15]
-
-    def explain_prediction(self, features: Dict[str, Any], target: str = 'ctr') -> Dict[str, Any]:
-        """Объяснение предсказания модели."""
-        predictions = self.predict(features)
-        confidence = self.get_prediction_confidence(features)
-        feature_importance = self.get_feature_importance(target)
-        
-        feature_impacts = []
-        df_features = self._prepare_single_prediction_df(features)
-
-        for feature_name, importance in feature_importance[:7]:
-            feature_value = df_features[feature_name].iloc[0]
-            impact = "нейтральное"
-            if importance > 0.05:
-                if feature_value > 0.7: impact = "положительное"
-                elif feature_value < 0.3: impact = "отрицательное"
-            feature_impacts.append({'feature': feature_name, 'value': feature_value, 'impact': impact})
-
-        overall_score = (
-            predictions['ctr'] / PERFORMANCE_METRICS['ctr']['target'] * 0.4 +
-            predictions['conversion_rate'] / PERFORMANCE_METRICS['conversion_rate']['target'] * 0.4 +
-            predictions['engagement'] / PERFORMANCE_METRICS['engagement']['target'] * 0.2
-        )
-        
-        return {
-            'predictions': predictions,
-            'confidence_intervals': confidence,
-            'overall_score': min(overall_score, 1.0),
-            'feature_impacts': feature_impacts,
-            'performance_category': self._categorize_performance(overall_score),
-        }
-
-    def _categorize_performance(self, score: float) -> str:
-        """Категоризация общей эффективности."""
-        if score >= 0.8: return "Отличная"
-        elif score >= 0.6: return "Хорошая"
-        elif score >= 0.4: return "Средняя"
-        else: return "Требует улучшения"
+        app.run()
