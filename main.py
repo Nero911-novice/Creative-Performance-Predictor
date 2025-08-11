@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import io
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 import warnings
 import traceback
 import plotly.graph_objects as go
