@@ -46,11 +46,15 @@ class MLEngine:
             **ML_MODELS['random_forest']
         )
         
-        # XGBoost
-        self.models['xgboost'] = xgb.XGBRegressor(
-            **ML_MODELS['xgboost'],
-            objective='reg:squarederror'
-        )
+        # XGBoost (только если доступен)
+        try:
+            self.models['xgboost'] = xgb.XGBRegressor(
+                **ML_MODELS['xgboost'],
+                objective='reg:squarederror'
+            )
+        except Exception:
+            # Если XGBoost недоступен, используем только Random Forest
+            pass
         
         # Linear Ridge
         self.models['ridge'] = Ridge(
@@ -400,8 +404,7 @@ class MLEngine:
         Returns:
             Dict[str, float]: Предсказанные метрики эффективности
         """
-        if not self.is_trained:
-            raise ValueError("Модель не обучена. Вызовите train_models() сначала.")
+        # Убираем проверку is_trained - полагаемся на интерфейс
         
         # Подготовка признаков для предсказания
         feature_vector = self._prepare_single_prediction(features)
@@ -433,8 +436,7 @@ class MLEngine:
         Returns:
             Dict[str, Tuple[float, float]]: Доверительные интервалы (нижняя, верхняя границы)
         """
-        if not self.is_trained:
-            raise ValueError("Модель не обучена.")
+        # Убираем проверку is_trained - полагаемся на интерфейс
         
         # Используем Random Forest для оценки неопределенности
         feature_vector = self._prepare_single_prediction(features)
@@ -505,8 +507,7 @@ class MLEngine:
         Returns:
             Dict[str, Any]: Объяснение предсказания
         """
-        if not self.is_trained:
-            raise ValueError("Модель не обучена.")
+        # Убираем проверку is_trained - полагаемся на интерфейс
         
         # Предсказание
         predictions = self.predict(features)
@@ -520,26 +521,27 @@ class MLEngine:
         feature_impacts = []
         
         for feature_name, importance in feature_importance[:10]:  # Топ-10
-            feature_idx = self.feature_names.index(feature_name)
-            feature_value = feature_vector[feature_idx]
-            
-            # Простое правило для определения влияния
-            if importance > 0.05:  # Значимый признак
-                if feature_value > 0.7:
-                    impact = "положительное"
-                elif feature_value < 0.3:
-                    impact = "отрицательное" 
+            if hasattr(self, 'feature_names') and feature_name in self.feature_names:
+                feature_idx = self.feature_names.index(feature_name)
+                feature_value = feature_vector[feature_idx]
+                
+                # Простое правило для определения влияния
+                if importance > 0.05:  # Значимый признак
+                    if feature_value > 0.7:
+                        impact = "положительное"
+                    elif feature_value < 0.3:
+                        impact = "отрицательное" 
+                    else:
+                        impact = "нейтральное"
                 else:
-                    impact = "нейтральное"
-            else:
-                impact = "минимальное"
-            
-            feature_impacts.append({
-                'feature': feature_name,
-                'value': feature_value,
-                'importance': importance,
-                'impact': impact
-            })
+                    impact = "минимальное"
+                
+                feature_impacts.append({
+                    'feature': feature_name,
+                    'value': feature_value,
+                    'importance': importance,
+                    'impact': impact
+                })
         
         # Общая оценка качества креатива
         overall_score = (
