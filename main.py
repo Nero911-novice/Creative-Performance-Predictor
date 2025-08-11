@@ -4,6 +4,12 @@
 Streamlit интерфейс для анализа и оптимизации креативов.
 """
 
+# main.py
+"""
+Основное приложение Creative Performance Predictor.
+Streamlit интерфейс для анализа и оптимизации креативов.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,15 +20,49 @@ from typing import Dict, Any, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-# Импорт модулей проекта
-from image_analyzer import ImageAnalyzer
-from ml_engine import MLEngine
-from visualizer import Visualizer
-from recommender import RecommendationEngine
-from config import (
-    APP_TITLE, APP_VERSION, PAGE_ICON, SUPPORTED_IMAGE_FORMATS,
-    MAX_IMAGE_SIZE, CUSTOM_CSS, DEMO_INSIGHTS, COLOR_SCHEME
-)
+# Проверка доступности зависимостей
+missing_deps = []
+
+try:
+    from image_analyzer import ImageAnalyzer
+except ImportError as e:
+    missing_deps.append(f"Image Analyzer: {str(e)}")
+    ImageAnalyzer = None
+
+try:
+    from ml_engine import MLEngine
+except ImportError as e:
+    missing_deps.append(f"ML Engine: {str(e)}")
+    MLEngine = None
+
+try:
+    from visualizer import Visualizer
+except ImportError as e:
+    missing_deps.append(f"Visualizer: {str(e)}")
+    Visualizer = None
+
+try:
+    from recommender import RecommendationEngine
+except ImportError as e:
+    missing_deps.append(f"Recommender: {str(e)}")
+    RecommendationEngine = None
+
+try:
+    from config import (
+        APP_TITLE, APP_VERSION, PAGE_ICON, SUPPORTED_IMAGE_FORMATS,
+        MAX_IMAGE_SIZE, CUSTOM_CSS, DEMO_INSIGHTS, COLOR_SCHEME
+    )
+except ImportError as e:
+    missing_deps.append(f"Config: {str(e)}")
+    # Fallback значения
+    APP_TITLE = "Creative Performance Predictor"
+    APP_VERSION = "1.0.0"
+    PAGE_ICON = "🎨"
+    SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png']
+    MAX_IMAGE_SIZE = 10 * 1024 * 1024
+    CUSTOM_CSS = ""
+    DEMO_INSIGHTS = ["Система готова к анализу ваших креативов!"]
+    COLOR_SCHEME = {}
 
 # Конфигурация страницы
 st.set_page_config(
@@ -33,13 +73,18 @@ st.set_page_config(
 )
 
 # Применение кастомных стилей
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+if CUSTOM_CSS:
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 class CreativePerformanceApp:
     """Главный класс приложения Creative Performance Predictor."""
     
     def __init__(self):
         """Инициализация приложения и компонентов."""
+        if not all([ImageAnalyzer, MLEngine, Visualizer, RecommendationEngine]):
+            st.error("Не удается инициализировать приложение - отсутствуют критические компоненты")
+            return
+            
         self.analyzer = ImageAnalyzer()
         self.ml_engine = MLEngine()
         self.visualizer = Visualizer()
@@ -847,6 +892,48 @@ class CreativePerformanceApp:
 
 def main():
     """Главная функция запуска приложения."""
+    
+    # Проверка наличия критических зависимостей
+    if missing_deps:
+        st.error("⚠️ Обнаружены проблемы с зависимостями")
+        
+        st.markdown("### 🛠️ Инструкции по устранению")
+        
+        st.markdown("""
+        **Шаг 1: Обновите pip и установите зависимости**
+        ```bash
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        ```
+        
+        **Шаг 2: Если OpenCV не устанавливается, попробуйте:**
+        ```bash
+        pip install opencv-python-headless==4.5.5.64
+        ```
+        
+        **Шаг 3: Для Ubuntu/Debian также установите:**
+        ```bash
+        sudo apt-get update
+        sudo apt-get install python3-opencv
+        ```
+        
+        **Шаг 4: Перезапустите приложение:**
+        ```bash
+        streamlit run main.py
+        ```
+        """)
+        
+        if st.button("🔄 Перезагрузить приложение"):
+            st.rerun()
+        
+        # Показываем детали ошибок
+        with st.expander("🔍 Детали ошибок"):
+            for dep in missing_deps:
+                st.code(dep)
+        
+        return
+    
+    # Если все зависимости на месте, запускаем приложение
     app = CreativePerformanceApp()
     app.run()
 
