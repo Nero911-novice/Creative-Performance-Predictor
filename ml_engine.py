@@ -72,62 +72,134 @@ class MLEngine:
             pd.DataFrame: Синтетический датасет
         """
         if n_samples is None:
-            n_samples = SYNTHETIC_DATA['n_samples']
+            n_samples = min(SYNTHETIC_DATA['n_samples'], 500)  # Уменьшаем размер по умолчанию
             
         np.random.seed(SYNTHETIC_DATA['random_state'])
         
-        # Генерация признаков изображений
-        data = {
-            # Цветовые признаки
+        # Генерация признаков изображений (оптимизированная версия)
+        data = {}
+        
+        # Цветовые признаки - векторизованная генерация
+        color_features = {
             'brightness': np.random.beta(2, 2, n_samples),
             'saturation': np.random.beta(2, 3, n_samples),
             'contrast_score': np.random.beta(3, 2, n_samples),
             'color_temperature': np.random.beta(2, 2, n_samples),
             'harmony_score': np.random.beta(3, 2, n_samples),
-            'color_diversity': np.random.poisson(3, n_samples) + 1,
-            'warm_cool_ratio': np.random.beta(2, 2, n_samples),
-            
-            # Композиционные признаки
+            'warm_cool_ratio': np.random.beta(2, 2, n_samples)
+        }
+        data.update(color_features)
+        
+        # Композиционные признаки
+        composition_features = {
             'rule_of_thirds_score': np.random.beta(2, 3, n_samples),
             'visual_balance_score': np.random.beta(3, 2, n_samples),
             'composition_complexity': np.random.beta(2, 3, n_samples),
             'center_focus_score': np.random.beta(2, 2, n_samples),
             'leading_lines_score': np.random.beta(1, 4, n_samples),
             'symmetry_score': np.random.beta(2, 3, n_samples),
-            'depth_perception': np.random.beta(2, 2, n_samples),
-            
-            # Текстовые признаки
-            'text_amount': np.random.poisson(3, n_samples),
-            'total_characters': np.random.poisson(50, n_samples),
+            'depth_perception': np.random.beta(2, 2, n_samples)
+        }
+        data.update(composition_features)
+        
+        # Текстовые признаки
+        text_features = {
             'readability_score': np.random.beta(3, 2, n_samples),
             'text_hierarchy': np.random.beta(3, 2, n_samples),
             'text_positioning': np.random.beta(2, 2, n_samples),
             'text_contrast': np.random.beta(3, 2, n_samples),
-            'has_cta': np.random.binomial(1, 0.7, n_samples),
-            
-            # Дополнительные признаки
-            'aspect_ratio': np.random.lognormal(0, 0.3, n_samples),
-            'image_size_score': np.random.beta(2, 2, n_samples),
-            
-            # Контекстуальные переменные
-            'category': np.random.choice(CREATIVE_CATEGORIES, n_samples),
-            'region': np.random.choice(REGIONS, n_samples)
+            'has_cta': np.random.binomial(1, 0.7, n_samples)
         }
+        data.update(text_features)
+        
+        # Дополнительные признаки (упрощенные)
+        additional_features = {
+            'color_diversity': np.clip(np.random.poisson(3, n_samples), 1, 10) / 10.0,
+            'text_amount': np.clip(np.random.poisson(3, n_samples), 0, 10) / 10.0,
+            'total_characters': np.clip(np.random.poisson(50, n_samples), 0, 200) / 200.0,
+            'aspect_ratio': np.clip(np.random.lognormal(0, 0.3, n_samples), 0.1, 5.0) / 5.0,
+            'image_size_score': np.random.beta(2, 2, n_samples)
+        }
+        data.update(additional_features)
+        
+        # Категориальные переменные (упрощенные)
+        categories = ['Автомобили', 'E-commerce', 'Финансы', 'Технологии']
+        regions = ['Россия', 'США', 'Европа']
+        
+        data.update({
+            'category': np.random.choice(categories, n_samples),
+            'region': np.random.choice(regions, n_samples)
+        })
         
         df = pd.DataFrame(data)
         
-        # Нормализация некоторых признаков
-        df['color_diversity'] = np.clip(df['color_diversity'], 1, 10) / 10.0
-        df['text_amount'] = np.clip(df['text_amount'], 0, 10) / 10.0
-        df['total_characters'] = np.clip(df['total_characters'], 0, 200) / 200.0
-        df['aspect_ratio'] = np.clip(df['aspect_ratio'], 0.1, 5.0) / 5.0
-        
-        # Генерация целевых метрик на основе признаков
-        df = self._generate_target_metrics(df)
+        # Генерация целевых метрик (оптимизированная)
+        df = self._generate_target_metrics_fast(df)
         
         return df
     
-    def _generate_target_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _generate_target_metrics_fast(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Быстрая генерация целевых метрик эффективности.
+        
+        Args:
+            df: DataFrame с признаками
+            
+        Returns:
+            pd.DataFrame: DataFrame с добавленными целевыми метриками
+        """
+        n_samples = len(df)
+        noise_level = SYNTHETIC_DATA['noise_level']
+        
+        # Векторизованные вычисления для скорости
+        # CTR модель (упрощенная)
+        ctr_base = (
+            0.3 * df['brightness'] +
+            0.2 * df['contrast_score'] +
+            0.2 * df['color_temperature'] +
+            0.1 * df['harmony_score'] +
+            0.2 * df['has_cta']
+        )
+        
+        # Добавление шума
+        ctr_noise = np.random.normal(0, noise_level, n_samples)
+        df['ctr'] = np.clip(ctr_base + ctr_noise, 0.001, 0.1)
+        
+        # Conversion Rate модель (упрощенная)
+        conv_base = (
+            0.3 * df['readability_score'] +
+            0.3 * df['text_contrast'] +
+            0.4 * df['has_cta']
+        )
+        
+        conv_noise = np.random.normal(0, noise_level, n_samples)
+        df['conversion_rate'] = np.clip(conv_base + conv_noise, 0.001, 0.5)
+        
+        # Engagement модель (упрощенная)
+        eng_base = (
+            0.4 * df['color_temperature'] +
+            0.3 * df['saturation'] +
+            0.3 * df['harmony_score']
+        )
+        
+        eng_noise = np.random.normal(0, noise_level, n_samples)
+        df['engagement'] = np.clip(eng_base + eng_noise, 0.01, 1.0)
+        
+        # Быстрые категориальные корректировки
+        category_multipliers = {
+            'Автомобили': [1.2, 0.9, 1.1],
+            'E-commerce': [1.1, 1.3, 1.0],
+            'Финансы': [0.8, 1.1, 0.9],
+            'Технологии': [1.0, 1.2, 1.1]
+        }
+        
+        for category, multipliers in category_multipliers.items():
+            mask = df['category'] == category
+            df.loc[mask, 'ctr'] *= multipliers[0]
+            df.loc[mask, 'conversion_rate'] *= multipliers[1]
+            df.loc[mask, 'engagement'] *= multipliers[2]
+        
+        return df
         """
         Генерация целевых метрик эффективности на основе признаков.
         
@@ -236,18 +308,21 @@ class MLEngine:
         
         return X, feature_columns
     
-    def train_models(self, df: pd.DataFrame = None) -> Dict[str, float]:
+    def train_models(self, df: pd.DataFrame = None, quick_mode: bool = True) -> Dict[str, float]:
         """
         Обучение всех моделей на данных.
         
         Args:
             df: DataFrame с обучающими данными
+            quick_mode: Быстрый режим обучения (меньше данных, быстрее)
             
         Returns:
             Dict[str, float]: Метрики качества моделей
         """
         if df is None:
-            df = self.generate_synthetic_data()
+            # Генерируем меньше данных для быстрого обучения
+            sample_size = 300 if quick_mode else 1000
+            df = self.generate_synthetic_data(sample_size)
         
         self.training_data = df
         
@@ -270,7 +345,17 @@ class MLEngine:
             
             target_results = {}
             
-            for model_name, model in self.models.items():
+            # Обучаем только Random Forest для скорости в quick_mode
+            models_to_train = ['random_forest'] if quick_mode else list(self.models.keys())
+            
+            for model_name in models_to_train:
+                model = self.models[model_name]
+                
+                # Упрощенные параметры для быстрого обучения
+                if quick_mode and model_name == 'random_forest':
+                    model.n_estimators = 50  # Уменьшаем количество деревьев
+                    model.max_depth = 5      # Ограничиваем глубину
+                
                 # Масштабирование признаков
                 X_train_scaled = self.scalers[model_name].fit_transform(X_train)
                 X_test_scaled = self.scalers[model_name].transform(X_test)
@@ -292,7 +377,7 @@ class MLEngine:
                     'rmse': rmse
                 }
                 
-                # Сохранение важности признаков (для Random Forest и XGBoost)
+                # Сохранение важности признаков (только для Random Forest)
                 if hasattr(model, 'feature_importances_'):
                     importance_key = f"{target}_{model_name}"
                     self.feature_importance[importance_key] = dict(
