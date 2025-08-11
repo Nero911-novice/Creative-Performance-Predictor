@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 
 from config import (
     RECOMMENDATION_TYPES, RECOMMENDATION_PRIORITIES,
-    SAMPLE_RECOMMENDATIONS, PERFORMANCE_METRICS
+    PERFORMANCE_METRICS
 )
 
 @dataclass
