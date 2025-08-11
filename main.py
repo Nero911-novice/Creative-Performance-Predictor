@@ -1,4 +1,4 @@
-# main.py - ОБНОВЛЕННАЯ ВЕРСИЯ
+# main.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 """
 Основное приложение Creative Performance Predictor.
 Обновленный Streamlit интерфейс для работы с революционными модулями.
@@ -683,13 +683,8 @@ class AdvancedCreativePerformanceApp:
         
         composition_data = analysis_results['composition_analysis']
         
-        # 3D анализ композиции
-        if st.session_state.advanced_mode:
-            comp_3d_fig = self.visualizer.create_composition_analysis_3d(composition_data)
-            st.plotly_chart(comp_3d_fig, use_container_width=True)
-        
-        # Стандартный анализ композиции
-        comp_fig = self.visualizer.plot_composition_analysis_3d(composition_data)
+        # Анализ композиции (используем существующий 3D график)
+        comp_fig = self.visualizer.create_composition_analysis_3d(composition_data)
         st.plotly_chart(comp_fig, use_container_width=True)
         
         # Детали композиции
