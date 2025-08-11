@@ -1,125 +1,37 @@
-# Creative Performance Predictor 2.0 - РЕВОЛЮЦИОННЫЕ ЗАВИСИМОСТИ
-# Установка: pip install -r requirements.txt
+# requirements_light.txt - ОБЛЕГЧЕННАЯ ВЕРСИЯ ДЛЯ STREAMLIT CLOUD
+# Эта версия работает без тяжелых зависимостей
 
 # ===== ОСНОВНЫЕ ЗАВИСИМОСТИ =====
 streamlit>=1.28.0
 pandas>=2.0.0
 numpy>=1.24.0
 
-# ===== МАШИННОЕ ОБУЧЕНИЕ =====
+# ===== МАШИННОЕ ОБУЧЕНИЕ (ТОЛЬКО ОСНОВНЫЕ) =====
 scikit-learn>=1.3.0
-xgboost>=1.7.0
+# xgboost>=1.7.0  # Закомментировано - можно включить при необходимости
 
-# ===== КОМПЬЮТЕРНОЕ ЗРЕНИЕ И OCR =====
-# EasyOCR - основной OCR движок (РЕВОЛЮЦИЯ!)
-easyocr>=1.7.0
-
-# OpenCV для обработки изображений
-opencv-python-headless>=4.8.0
-
-# YOLO для детекции объектов (РЕВОЛЮЦИЯ!)
-ultralytics>=8.0.0
-torch>=2.0.0
-torchvision>=0.15.0
-
-# Альтернативный OCR (fallback)
-pytesseract>=0.3.10
-
-# Обработка изображений
+# ===== ОБРАБОТКА ИЗОБРАЖЕНИЙ (БАЗОВАЯ) =====
 Pillow>=9.0.0
 matplotlib>=3.7.0
-seaborn>=0.12.0
 
 # ===== ВИЗУАЛИЗАЦИЯ =====
-# Продвинутые интерактивные графики
 plotly>=5.15.0
 
 # ===== НАУЧНЫЕ ВЫЧИСЛЕНИЯ =====
 scipy>=1.11.0
+
+# ===== ДОПОЛНИТЕЛЬНЫЕ =====
 joblib>=1.3.0
 
-# ===== ЦВЕТОВОЙ АНАЛИЗ =====
-# Для продвинутого анализа цветов
-scikit-image>=0.21.0
-colorsys  # Встроенная библиотека Python
+# ===== ПРИМЕЧАНИЯ =====
+# Исключены тяжелые зависимости:
+# - easyocr (требует много времени и места)
+# - ultralytics (YOLO - очень тяжелый)
+# - torch, torchvision (самые тяжелые)
+# - opencv-python (может вызывать проблемы)
 
-# ===== ТЕКСТОВЫЙ АНАЛИЗ =====
-# NLP для анализа контента (опционально)
-# nltk>=3.8.1
-# textblob>=0.17.1
-
-# ===== ДОПОЛНИТЕЛЬНЫЕ ИНСТРУМЕНТЫ =====
-# Для работы с изображениями
-imageio>=2.31.0
-
-# Для цветовых схем
-webcolors>=1.13.0
-
-# ===== ОПЦИОНАЛЬНЫЕ ЗАВИСИМОСТИ ДЛЯ ПРОДВИНУТЫХ ФУНКЦИЙ =====
-
-# Для глубокого обучения (если нужно)
-# tensorflow>=2.13.0
-
-# Для детекции лиц
-# face-recognition>=1.3.0
-# dlib>=19.24.0
-
-# Для анализа эмоций
-# deepface>=0.0.79
-
-# Для работы с видео
-# moviepy>=1.0.3
-
-# ===== СИСТЕМНЫЕ ЗАВИСИМОСТИ =====
-# Для стабильной работы
-requests>=2.31.0
-tqdm>=4.65.0
-
-# ===== ИНСТРУКЦИИ ПО УСТАНОВКЕ =====
-
-# 1. БАЗОВАЯ УСТАНОВКА (без YOLO и EasyOCR):
-# pip install streamlit pandas numpy scikit-learn plotly opencv-python-headless pillow
-
-# 2. ПОЛНАЯ УСТАНОВКА:
-# pip install -r requirements.txt
-
-# 3. УСТАНОВКА С GPU ПОДДЕРЖКОЙ (для YOLO):
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-# pip install -r requirements.txt
-
-# 4. ТОЛЬКО CPU ВЕРСИЯ (легкая):
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu  
-# pip install -r requirements.txt
-
-# ===== СИСТЕМНЫЕ ТРЕБОВАНИЯ =====
-
-# МИНИМАЛЬНЫЕ:
-# - Python 3.8+
-# - RAM: 4GB
-# - Место на диске: 2GB
-
-# РЕКОМЕНДУЕМЫЕ:
-# - Python 3.10+
-# - RAM: 8GB+
-# - GPU: Опционально для ускорения YOLO
-# - Место на диске: 5GB+
-
-# ===== ОСОБЕННОСТИ УСТАНОВКИ =====
-
-# EasyOCR при первом запуске скачает модели (~100MB)
-# YOLO при первом запуске скачает веса (~6MB для yolov8n.pt)
-# Все модели кэшируются локально
-
-# ===== РЕШЕНИЕ ПРОБЛЕМ =====
-
-# Если ошибка с Tesseract:
-# Ubuntu/Debian: sudo apt install tesseract-ocr tesseract-ocr-rus
-# macOS: brew install tesseract tesseract-lang
-# Windows: Скачать с https://github.com/UB-Mannheim/tesseract/wiki
-
-# Если ошибка с OpenCV:
-# pip uninstall opencv-python opencv-python-headless
-# pip install opencv-python-headless==4.8.1.78
-
-# Если ошибка с PyTorch:
-# Перейти на https://pytorch.org/ и выбрать подходящую версию
+# Система будет работать в режиме fallback:
+# - Эвристический анализ текста вместо OCR
+# - Базовый анализ композиции без YOLO
+# - Только Random Forest и Gradient Boosting
+# - Все остальные функции работают полностью
