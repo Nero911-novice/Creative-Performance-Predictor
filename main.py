@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import io
 import time
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 import warnings
 import traceback
 warnings.filterwarnings('ignore')
@@ -1038,24 +1038,14 @@ class AdvancedCreativePerformanceApp:
         """Получение психологической характеристики цвета."""
         r, g, b = color
         
-        # Определяем доминирующий канал
         if r > g and r > b:
-            if r > 200:
-                return "Энергия, страсть"
-            else:
-                return "Теплота, комфорт"
+            return "Энергия, страсть"
         elif g > r and g > b:
-            if g > 200:
-                return "Природа, рост"
-            else:
-                return "Спокойствие, баланс"
+            return "Природа, рост"
         elif b > r and b > g:
-            if b > 200:
-                return "Доверие, стабильность"
-            else:
-                return "Надежность, глубина"
+            return "Доверие, спокойствие"
         else:
-            return "Нейтральность, баланс"
+            return "Баланс"
 
     def _create_advanced_demo_image(self) -> Optional[Image.Image]:
         """Создание продвинутого демонстрационного изображения."""
