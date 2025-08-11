@@ -197,8 +197,16 @@ class CreativePerformanceApp:
                     
                     # Проверяем результаты обучения
                     if training_results and len(training_results) > 0:
+                        # ВАЖНО: синхронизируем состояния
+                        self.ml_engine.is_trained = True
                         st.session_state.model_trained = True
                         st.session_state.training_results = training_results
+                        
+                        # Проверяем что все необходимые атрибуты установлены
+                        if not hasattr(self.ml_engine, 'feature_names') or not self.ml_engine.feature_names:
+                            st.warning("⚠️ Список признаков не установлен, попробуйте переобучить модель")
+                            st.session_state.model_trained = False
+                            return
                         
                         # Показываем успех
                         status_text.text("")
@@ -207,6 +215,7 @@ class CreativePerformanceApp:
                         
                         # Показываем краткую статистику
                         with st.expander("📊 Статистика обучения", expanded=False):
+                            st.write(f"**Количество признаков:** {len(self.ml_engine.feature_names)}")
                             for target, models in training_results.items():
                                 st.write(f"**{target.upper()}:**")
                                 for model_name, metrics in models.items():
@@ -215,6 +224,7 @@ class CreativePerformanceApp:
                     else:
                         st.error("❌ Обучение завершилось, но результаты недоступны")
                         st.session_state.model_trained = False
+                        self.ml_engine.is_trained = False
                 
                 except Exception as training_error:
                     status_text.text("")
@@ -292,12 +302,21 @@ class CreativePerformanceApp:
             st.markdown("### 📈 Статус системы")
             
             # Статус модели
-            if st.session_state.model_trained:
+            model_ready = (
+                st.session_state.model_trained and 
+                hasattr(self.ml_engine, 'is_trained') and 
+                self.ml_engine.is_trained
+            )
+            
+            if model_ready:
                 st.success("✅ Модель обучена")
             else:
                 st.error("❌ Модель не обучена")
                 if st.button("🔄 Обучить модель", key="retrain_sidebar"):
                     with st.spinner("Обучение модели..."):
+                        # Сбрасываем состояния перед обучением
+                        st.session_state.model_trained = False
+                        self.ml_engine.is_trained = False
                         self._train_model()
                     st.rerun()
             
@@ -427,7 +446,7 @@ class CreativePerformanceApp:
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    st.image(image, caption="Загруженное изображение", use_column_width=True)
+                    st.image(image, caption="Загруженное изображение", use_container_width=True)
                 
                 with col2:
                     st.markdown("### 📏 Характеристики изображения")
@@ -466,9 +485,13 @@ class CreativePerformanceApp:
             if st.button("🎲 Загрузить демо-изображение"):
                 # Создание простого демо-изображения
                 demo_image = self._create_demo_image()
-                st.session_state.current_image = demo_image
-                st.session_state.image_uploaded = True
-                st.rerun()
+                if demo_image:
+                    st.session_state.current_image = demo_image
+                    st.session_state.image_uploaded = True
+                    st.success("✅ Демо-изображение загружено!")
+                    st.rerun()
+                else:
+                    st.error("❌ Не удалось создать демо-изображение")
     
     def _perform_analysis(self, image: Image.Image):
         """Выполнение полного анализа изображения."""
@@ -1028,11 +1051,111 @@ class CreativePerformanceApp:
             - Количество признаков: 20+
             """)
     
-    def _create_demo_image(self) -> Image.Image:
+    def _create_demo_image(self) -> Optional[Image.Image]:
         """Создание демонстрационного изображения."""
-        # Создание простого демо-изображения
-        demo_image = Image.new('RGB', (400, 300), color=(70, 130, 180))
-        return demo_image
+        try:
+            from PIL import ImageDraw, ImageFont
+            import numpy as np
+            
+            # Создание изображения с градиентом
+            width, height = 800, 600
+            image = Image.new('RGB', (width, height))
+            draw = ImageDraw.Draw(image)
+            
+            # Создание градиентного фона (желтый как у Максима)
+            for y in range(height):
+                # Градиент от ярко-желтого к оранжевому
+                color_intensity = int(255 * (1 - y / height * 0.3))
+                color = (255, color_intensity, 0)  # Желто-оранжевый градиент
+                draw.line([(0, y), (width, y)], fill=color)
+            
+            # Добавление текста
+            try:
+                # Попытка использовать системный шрифт
+                font_large = ImageFont.load_default()
+                font_medium = ImageFont.load_default()
+            except:
+                font_large = font_medium = None
+            
+            # Основной заголовок
+            text_main = "DEMO CREATIVE"
+            
+            # Современный способ получения размера текста
+            try:
+                # Для новых версий Pillow
+                bbox = draw.textbbox((0, 0), text_main, font=font_large)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+            except AttributeError:
+                # Для старых версий Pillow
+                try:
+                    text_w, text_h = draw.textsize(text_main, font=font_large)
+                except:
+                    text_w, text_h = 200, 40
+                    
+            x = (width - text_w) // 2
+            y = height // 3
+            
+            # Тень для текста
+            draw.text((x+3, y+3), text_main, fill=(50, 50, 50), font=font_large)
+            # Основной текст
+            draw.text((x, y), text_main, fill=(255, 255, 255), font=font_large)
+            
+            # Подзаголовок
+            text_sub = "Test Image for Analysis"
+            try:
+                bbox2 = draw.textbbox((0, 0), text_sub, font=font_medium)
+                text_w2 = bbox2[2] - bbox2[0]
+                text_h2 = bbox2[3] - bbox2[1]
+            except AttributeError:
+                try:
+                    text_w2, text_h2 = draw.textsize(text_sub, font=font_medium)
+                except:
+                    text_w2, text_h2 = 150, 20
+                    
+            x2 = (width - text_w2) // 2
+            y2 = y + text_h + 20
+            draw.text((x2, y2), text_sub, fill=(100, 100, 100), font=font_medium)
+            
+            # Добавление простых геометрических элементов
+            # Круг в правом верхнем углу
+            circle_x, circle_y = width - 150, 100
+            draw.ellipse([circle_x-50, circle_y-50, circle_x+50, circle_y+50], 
+                        fill=(255, 100, 100), outline=(200, 50, 50), width=3)
+            
+            # Прямоугольник в левом нижнем углу
+            rect_x, rect_y = 100, height - 150
+            draw.rectangle([rect_x-40, rect_y-30, rect_x+40, rect_y+30], 
+                          fill=(100, 150, 255), outline=(50, 100, 200), width=3)
+            
+            # CTA кнопка
+            button_x, button_y = width // 2, height - 100
+            button_w, button_h = 120, 40
+            draw.rectangle([button_x-button_w//2, button_y-button_h//2, 
+                           button_x+button_w//2, button_y+button_h//2], 
+                          fill=(220, 50, 50), outline=(180, 30, 30), width=2)
+            
+            cta_text = "CLICK HERE"
+            try:
+                # Современный способ для новых версий Pillow
+                try:
+                    bbox3 = draw.textbbox((0, 0), cta_text, font=font_medium)
+                    cta_w = bbox3[2] - bbox3[0]
+                    cta_h = bbox3[3] - bbox3[1]
+                except AttributeError:
+                    # Для старых версий Pillow
+                    cta_w, cta_h = draw.textsize(cta_text, font=font_medium) if font_medium else (80, 15)
+                    
+                draw.text((button_x - cta_w//2, button_y - cta_h//2), 
+                         cta_text, fill=(255, 255, 255), font=font_medium)
+            except:
+                pass
+            
+            return image
+            
+        except Exception as e:
+            print(f"Ошибка создания демо-изображения: {e}")
+            return None
 
 def main():
     """Главная функция запуска приложения."""
