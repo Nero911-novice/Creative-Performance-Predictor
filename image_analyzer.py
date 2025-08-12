@@ -173,7 +173,7 @@ class AdvancedImageAnalyzer:
         return result
     
     def analyze_text(self) -> Dict:
-        """Революционный анализ текстовых элементов."""
+        """Анализ текстовых элементов."""
         if 'text_analysis' in self.analysis_cache:
             return self.analysis_cache['text_analysis']
         
