@@ -1,33 +1,43 @@
-# Creative Performance Predictor 2.0 - ОПТИМИЗИРОВАННЫЕ ЗАВИСИМОСТИ
-# Версия для Streamlit Cloud (только CPU)
+# Creative Performance Predictor 2.0 - ИСПРАВЛЕННЫЕ ЗАВИСИМОСТИ
+# Совместимость с большинством систем
 
+# === ОСНОВНЫЕ ЗАВИСИМОСТИ ===
 streamlit>=1.28.0
 pandas>=2.0.0
-numpy>=1.24.0
+numpy>=1.24.0,<2.0.0
 
-# --- Машинное обучение ---
-scikit-learn>=1.3.0
-xgboost>=1.7.0
+# === МАШИННОЕ ОБУЧЕНИЕ ===
+scikit-learn>=1.3.0,<1.5.0
 joblib>=1.3.0
 
-# --- Компьютерное зрение и OCR ---
+# XGBoost с фиксированной версией для стабильности
+xgboost>=1.7.0,<2.1.0
 
-# Указываем PyTorch и Torchvision для CPU.
-# pip сам найдет совместимую с Python 3.13+ версию
-torch --index-url https://download.pytorch.org/whl/cpu
-torchvision --index-url https://download.pytorch.org/whl/cpu
+# === ОБРАБОТКА ИЗОБРАЖЕНИЙ ===
+Pillow>=9.0.0,<11.0.0
+opencv-python-headless>=4.8.0,<4.10.0
 
-# Основные CV библиотеки
-easyocr>=1.7.0
-opencv-python-headless>=4.8.0
-ultralytics>=8.0.0
-Pillow>=9.0.0
+# === ВИЗУАЛИЗАЦИЯ ===
+plotly>=5.15.0,<6.0.0
+matplotlib>=3.7.0,<3.9.0
+seaborn>=0.12.0,<0.14.0
+scipy>=1.11.0,<1.14.0
 
-# Fallback OCR
+# === МАШИННОЕ ОБУЧЕНИЕ - ОПЦИОНАЛЬНЫЕ ===
+# PyTorch CPU-only для EasyOCR (если доступен)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0,<2.2.0; python_version>="3.8"
+torchvision>=0.15.0,<0.17.0; python_version>="3.8"
+
+# === OCR И КОМПЬЮТЕРНОЕ ЗРЕНИЕ ===
+# EasyOCR - основной OCR (может потребовать компиляцию)
+easyocr>=1.7.0; python_version>="3.8"
+
+# Tesseract fallback
 pytesseract>=0.3.10
 
-# --- Визуализация и вычисления ---
-plotly>=5.15.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-scipy>=1.11.0
+# YOLO для детекции объектов
+ultralytics>=8.0.0,<8.3.0
+
+# === ДОПОЛНИТЕЛЬНЫЕ УТИЛИТЫ ===
+# colorsys входит в стандартную библиотеку Python
