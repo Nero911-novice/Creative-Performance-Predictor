@@ -179,270 +179,269 @@ class AdvancedVisualizer:
         
         return fig
     
-  def create_attention_heatmap(self, image_features: Dict, predictions: Dict) -> go.Figure:
-    """Создание динамичного heatmap зон внимания на основе реального анализа изображения."""
-    
-    # Симулируем тепловую карту на основе характеристик изображения
-    grid_size = 30  # Увеличиваем разрешение для детализации
-    x = np.linspace(0, 100, grid_size)
-    y = np.linspace(0, 100, grid_size)
-    X, Y = np.meshgrid(x, y)
-    
-    # Создаем базовую карту внимания
-    attention_map = np.zeros((grid_size, grid_size))
-    
-    # === 1. ДИНАМИЧНОЕ ПРАВИЛО ТРЕТЕЙ ===
-    # Адаптируем к фактическому соотношению сторон
-    aspect_ratio = image_features.get('aspect_ratio', 1.0)
-    rule_of_thirds_strength = image_features.get('rule_of_thirds_score', 0.5)
-    
-    if rule_of_thirds_strength > 0.3:  # Только если правило действительно применимо
-        # Адаптивные линии третей в зависимости от соотношения сторон
-        if aspect_ratio > 1.5:  # Широкое изображение
-            third_points_x = [25, 50, 75]  # Больше горизонтальных точек
-            third_points_y = [40, 60]       # Меньше вертикальных
-        elif aspect_ratio < 0.7:  # Высокое изображение
-            third_points_x = [40, 60]       # Меньше горизонтальных
-            third_points_y = [25, 50, 75]   # Больше вертикальных
-        else:  # Квадратное или близко к нему
-            third_points_x = [33, 67]
-            third_points_y = [33, 67]
+ def create_attention_heatmap(self, image_features: Dict, predictions: Dict) -> go.Figure:
+        """Создание динамичного heatmap зон внимания на основе реального анализа изображения."""
         
-        for tx in third_points_x:
-            for ty in third_points_y:
+        # Симулируем тепловую карту на основе характеристик изображения
+        grid_size = 30  # Увеличиваем разрешение для детализации
+        x = np.linspace(0, 100, grid_size)
+        y = np.linspace(0, 100, grid_size)
+        X, Y = np.meshgrid(x, y)
+        
+        # Создаем базовую карту внимания
+        attention_map = np.zeros((grid_size, grid_size))
+        
+        # === 1. ДИНАМИЧНОЕ ПРАВИЛО ТРЕТЕЙ ===
+        # Адаптируем к фактическому соотношению сторон
+        aspect_ratio = image_features.get('aspect_ratio', 1.0)
+        rule_of_thirds_strength = image_features.get('rule_of_thirds_score', 0.5)
+        
+        if rule_of_thirds_strength > 0.3:  # Только если правило действительно применимо
+            # Адаптивные линии третей в зависимости от соотношения сторон
+            if aspect_ratio > 1.5:  # Широкое изображение
+                third_points_x = [25, 50, 75]  # Больше горизонтальных точек
+                third_points_y = [40, 60]       # Меньше вертикальных
+            elif aspect_ratio < 0.7:  # Высокое изображение
+                third_points_x = [40, 60]       # Меньше горизонтальных
+                third_points_y = [25, 50, 75]   # Больше вертикальных
+            else:  # Квадратное или близко к нему
+                third_points_x = [33, 67]
+                third_points_y = [33, 67]
+            
+            for tx in third_points_x:
+                for ty in third_points_y:
+                    for i in range(grid_size):
+                        for j in range(grid_size):
+                            dist = np.sqrt((X[i,j] - tx)**2 + (Y[i,j] - ty)**2)
+                            attention_map[i,j] += np.exp(-dist/12) * rule_of_thirds_strength * 0.8
+        
+        # === 2. ДЕТЕКТИРОВАННЫЕ ОБЪЕКТЫ (YOLO) ===
+        focal_points = image_features.get('focal_points', 0)
+        object_positions = []
+        
+        if focal_points > 0:
+            # Симулируем расположение объектов на основе их количества
+            if focal_points == 1:
+                # Один объект - скорее всего в центре или точке силы
+                if np.random.random() > 0.5:
+                    object_positions = [(50, 50)]  # Центр
+                else:
+                    object_positions = [(67, 33)]  # Точка силы
+            elif focal_points == 2:
+                # Два объекта - диагональное расположение
+                object_positions = [(33, 33), (67, 67)]
+            elif focal_points >= 3:
+                # Множественные объекты - более равномерное распределение
+                np.random.seed(42)  # Для воспроизводимости
+                object_positions = [(np.random.randint(20, 80), np.random.randint(20, 80)) 
+                                  for _ in range(min(focal_points, 5))]
+            
+            # Добавляем тепло от объектов
+            for ox, oy in object_positions:
+                for i in range(grid_size):
+                    for j in range(grid_size):
+                        dist = np.sqrt((X[i,j] - ox)**2 + (Y[i,j] - oy)**2)
+                        # Объекты привлекают сильное внимание
+                        attention_map[i,j] += np.exp(-dist/8) * 1.2
+        
+        # === 3. ЦЕНТРАЛЬНЫЙ ФОКУС (АДАПТИВНЫЙ) ===
+        center_strength = image_features.get('center_focus_score', 0.5)
+        center_x, center_y = 50, 50
+        
+        if center_strength > 0.4:
+            # Если есть объекты, центр может смещаться
+            if focal_points > 0 and object_positions:
+                if len(object_positions) == 1:
+                    center_x, center_y = object_positions[0]
+            
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    dist_center = np.sqrt((X[i,j] - center_x)**2 + (Y[i,j] - center_y)**2)
+                    attention_map[i,j] += np.exp(-dist_center/15) * center_strength * 0.7
+        
+        # === 4. ТЕКСТОВЫЙ АНАЛИЗ ===
+        text_amount = image_features.get('text_amount', 0)
+        has_cta = image_features.get('has_cta', False)
+        text_positions = []
+        
+        if text_amount > 0:
+            # Текст привлекает внимание в разных зонах
+            if has_cta:
+                # CTA обычно в нижней части или справа
+                cta_positions = [(75, 80), (85, 50), (50, 85)]
+                text_positions.extend(cta_positions[:1])  # Выбираем одну позицию
+            
+            if text_amount > 1:
+                # Дополнительный текст в верхней части
+                text_positions.extend([(30, 20), (70, 15)])
+            
+            # Применяем тепло от текста
+            for tx, ty in text_positions:
                 for i in range(grid_size):
                     for j in range(grid_size):
                         dist = np.sqrt((X[i,j] - tx)**2 + (Y[i,j] - ty)**2)
-                        attention_map[i,j] += np.exp(-dist/12) * rule_of_thirds_strength * 0.8
-    
-    # === 2. ДЕТЕКТИРОВАННЫЕ ОБЪЕКТЫ (YOLO) ===
-    focal_points = image_features.get('focal_points', 0)
-    if focal_points > 0:
-        # Симулируем расположение объектов на основе их количества
-        object_positions = []
+                        heat_intensity = 0.8 if has_cta else 0.5
+                        attention_map[i,j] += np.exp(-dist/10) * heat_intensity
         
-        if focal_points == 1:
-            # Один объект - скорее всего в центре или точке силы
-            if np.random.random() > 0.5:
-                object_positions = [(50, 50)]  # Центр
-            else:
-                object_positions = [(67, 33)]  # Точка силы
-        elif focal_points == 2:
-            # Два объекта - диагональное расположение
-            object_positions = [(33, 33), (67, 67)]
-        elif focal_points >= 3:
-            # Множественные объекты - более равномерное распределение
+        # === 5. КОНТРАСТ И ЦВЕТОВЫЕ ФАКТОРЫ ===
+        contrast_boost = image_features.get('contrast_score', 0.5)
+        color_vibrancy = image_features.get('color_vibrancy', 0.5)
+        
+        # Высокий контраст и яркость увеличивают общее внимание
+        global_attention_multiplier = 1 + (contrast_boost * 0.3) + (color_vibrancy * 0.2)
+        attention_map *= global_attention_multiplier
+        
+        # === 6. ЭМОЦИОНАЛЬНОЕ ВОЗДЕЙСТВИЕ ===
+        emotional_impact = image_features.get('emotional_impact', 0.5)
+        if emotional_impact > 0.6:
+            # Эмоциональные изображения создают более рассеянное внимание
             np.random.seed(42)  # Для воспроизводимости
-            object_positions = [(np.random.randint(20, 80), np.random.randint(20, 80)) 
-                              for _ in range(min(focal_points, 5))]
-        
-        # Добавляем тепло от объектов
-        for ox, oy in object_positions:
             for i in range(grid_size):
                 for j in range(grid_size):
-                    dist = np.sqrt((X[i,j] - ox)**2 + (Y[i,j] - oy)**2)
-                    # Объекты привлекают сильное внимание
-                    attention_map[i,j] += np.exp(-dist/8) * 1.2
-    
-    # === 3. ЦЕНТРАЛЬНЫЙ ФОКУС (АДАПТИВНЫЙ) ===
-    center_strength = image_features.get('center_focus_score', 0.5)
-    if center_strength > 0.4:
-        # Центральное внимание зависит от композиции
-        center_x, center_y = 50, 50
+                    # Добавляем небольшой шум для эмоциональности
+                    noise = np.random.normal(0, 0.1) * emotional_impact
+                    attention_map[i,j] += max(0, noise)
         
-        # Если есть объекты, центр может смещаться
-        if focal_points > 0 and 'object_positions' in locals():
-            if len(object_positions) == 1:
-                center_x, center_y = object_positions[0]
-        
-        for i in range(grid_size):
-            for j in range(grid_size):
-                dist_center = np.sqrt((X[i,j] - center_x)**2 + (Y[i,j] - center_y)**2)
-                attention_map[i,j] += np.exp(-dist_center/15) * center_strength * 0.7
-    
-    # === 4. ТЕКСТОВЫЙ АНАЛИЗ ===
-    text_amount = image_features.get('text_amount', 0)
-    has_cta = image_features.get('has_cta', False)
-    
-    if text_amount > 0:
-        # Текст привлекает внимание в разных зонах
-        text_positions = []
-        
-        if has_cta:
-            # CTA обычно в нижней части или справа
-            cta_positions = [(75, 80), (85, 50), (50, 85)]
-            text_positions.extend(cta_positions[:1])  # Выбираем одну позицию
-        
-        if text_amount > 1:
-            # Дополнительный текст в верхней части
-            text_positions.extend([(30, 20), (70, 15)])
-        
-        # Применяем тепло от текста
-        for tx, ty in text_positions:
+        # === 7. СПЕЦИАЛЬНЫЕ ЗОНЫ ===
+        # F-паттерн для текстовых креативов
+        if text_amount > 2:
+            # Горизонтальные полосы F-паттерна
             for i in range(grid_size):
+                for j in range(int(grid_size * 0.15)):  # Верхняя полоса
+                    attention_map[i, j] += 0.3
+                for j in range(int(grid_size * 0.4), int(grid_size * 0.6)):  # Средняя полоса
+                    attention_map[i, j] += 0.2
+            
+            # Вертикальная полоса слева
+            for i in range(int(grid_size * 0.15)):
                 for j in range(grid_size):
-                    dist = np.sqrt((X[i,j] - tx)**2 + (Y[i,j] - ty)**2)
-                    heat_intensity = 0.8 if (tx, ty) in locals().get('cta_positions', []) else 0.5
-                    attention_map[i,j] += np.exp(-dist/10) * heat_intensity
-    
-    # === 5. КОНТРАСТ И ЦВЕТОВЫЕ ФАКТОРЫ ===
-    contrast_boost = image_features.get('contrast_score', 0.5)
-    color_vibrancy = image_features.get('color_vibrancy', 0.5)
-    
-    # Высокий контраст и яркость увеличивают общее внимание
-    global_attention_multiplier = 1 + (contrast_boost * 0.3) + (color_vibrancy * 0.2)
-    attention_map *= global_attention_multiplier
-    
-    # === 6. ЭМОЦИОНАЛЬНОЕ ВОЗДЕЙСТВИЕ ===
-    emotional_impact = image_features.get('emotional_impact', 0.5)
-    if emotional_impact > 0.6:
-        # Эмоциональные изображения создают более рассеянное внимание
-        for i in range(grid_size):
-            for j in range(grid_size):
-                # Добавляем небольшой шум для эмоциональности
-                noise = np.random.normal(0, 0.1) * emotional_impact
-                attention_map[i,j] += max(0, noise)
-    
-    # === 7. СПЕЦИАЛЬНЫЕ ЗОНЫ ===
-    # F-паттерн для текстовых креативов
-    if text_amount > 2:
-        # Горизонтальные полосы F-паттерна
-        for i in range(grid_size):
-            for j in range(int(grid_size * 0.15)):  # Верхняя полоса
-                attention_map[i, j] += 0.3
-            for j in range(int(grid_size * 0.4), int(grid_size * 0.6)):  # Средняя полоса
-                attention_map[i, j] += 0.2
+                    attention_map[i, j] += 0.25
         
-        # Вертикальная полоса слева
-        for i in range(int(grid_size * 0.15)):
-            for j in range(grid_size):
-                attention_map[i, j] += 0.25
-    
-    # === 8. АДАПТИВНАЯ НОРМАЛИЗАЦИЯ ===
-    # Умная нормализация, сохраняющая динамику
-    attention_map = np.clip(attention_map, 0, None)  # Убираем отрицательные значения
-    
-    if attention_map.max() > 0:
-        # Нормализуем с сохранением контрастности
-        percentile_95 = np.percentile(attention_map, 95)
-        attention_map = attention_map / percentile_95
-        attention_map = np.clip(attention_map, 0, 1)
-    else:
-        # Fallback если карта пустая
-        attention_map = np.ones((grid_size, grid_size)) * 0.3
-    
-    # === СОЗДАНИЕ ГРАФИКА ===
-    fig = go.Figure(data=go.Heatmap(
-        z=attention_map, 
-        x=x, 
-        y=y,
-        colorscale=[
-            [0, 'rgba(255,255,255,0)'],      # Прозрачный
-            [0.2, 'rgba(135,206,250,0.3)'],  # Голубой (низкое внимание)
-            [0.4, 'rgba(255,255,0,0.5)'],    # Желтый (среднее внимание)
-            [0.7, 'rgba(255,165,0,0.7)'],    # Оранжевый (высокое внимание)
-            [1, 'rgba(255,0,0,0.9)']         # Красный (максимальное внимание)
-        ],
-        showscale=True,
-        colorbar=dict(
-            title=dict(
-                text="Интенсивность внимания",
-                side="right"
+        # === 8. АДАПТИВНАЯ НОРМАЛИЗАЦИЯ ===
+        # Умная нормализация, сохраняющая динамику
+        attention_map = np.clip(attention_map, 0, None)  # Убираем отрицательные значения
+        
+        if attention_map.max() > 0:
+            # Нормализуем с сохранением контрастности
+            percentile_95 = np.percentile(attention_map, 95)
+            attention_map = attention_map / percentile_95
+            attention_map = np.clip(attention_map, 0, 1)
+        else:
+            # Fallback если карта пустая
+            attention_map = np.ones((grid_size, grid_size)) * 0.3
+        
+        # === СОЗДАНИЕ ГРАФИКА ===
+        fig = go.Figure(data=go.Heatmap(
+            z=attention_map, 
+            x=x, 
+            y=y,
+            colorscale=[
+                [0, 'rgba(255,255,255,0)'],      # Прозрачный
+                [0.2, 'rgba(135,206,250,0.3)'],  # Голубой (низкое внимание)
+                [0.4, 'rgba(255,255,0,0.5)'],    # Желтый (среднее внимание)
+                [0.7, 'rgba(255,165,0,0.7)'],    # Оранжевый (высокое внимание)
+                [1, 'rgba(255,0,0,0.9)']         # Красный (максимальное внимание)
+            ],
+            showscale=True,
+            colorbar=dict(
+                title=dict(
+                    text="Интенсивность внимания",
+                    side="right"
+                ),
+                orientation="v",
+                len=0.9,
+                tickmode='array',
+                tickvals=[0, 0.25, 0.5, 0.75, 1.0],
+                ticktext=['Слабое', 'Низкое', 'Среднее', 'Высокое', 'Максимум']
             ),
-            orientation="v",
-            len=0.9,
-            tickmode='array',
-            tickvals=[0, 0.25, 0.5, 0.75, 1.0],
-            ticktext=['Слабое', 'Низкое', 'Среднее', 'Высокое', 'Максимум']
-        ),
-        hovertemplate='Позиция: (%{x:.0f}%, %{y:.0f}%)<br>' +
-                     'Внимание: %{z:.2f}<br>' +
-                     '<extra></extra>'
-    ))
-    
-    # === ДИНАМИЧНЫЕ АННОТАЦИИ ===
-    annotations = []
-    
-    # Добавляем сетку правила третей только если она применимо
-    if rule_of_thirds_strength > 0.3:
-        fig.add_hline(y=33.33, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
-        fig.add_hline(y=66.67, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
-        fig.add_vline(x=33.33, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
-        fig.add_vline(x=66.67, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
-        
-        # Точки силы
-        fig.add_trace(go.Scatter(
-            x=[33.33, 66.67, 33.33, 66.67], 
-            y=[33.33, 33.33, 66.67, 66.67],
-            mode='markers', 
-            marker=dict(size=10, color='white', symbol='x', 
-                       line=dict(width=2, color='black')),
-            name='Точки силы', 
-            showlegend=True
+            hovertemplate='Позиция: (%{x:.0f}%, %{y:.0f}%)<br>' +
+                         'Внимание: %{z:.2f}<br>' +
+                         '<extra></extra>'
         ))
-    
-    # Показываем детектированные объекты
-    if focal_points > 0 and 'object_positions' in locals():
-        obj_x = [pos[0] for pos in object_positions]
-        obj_y = [pos[1] for pos in object_positions]
         
-        fig.add_trace(go.Scatter(
-            x=obj_x, y=obj_y,
-            mode='markers',
-            marker=dict(size=15, color='cyan', symbol='star',
-                       line=dict(width=2, color='blue')),
-            name=f'Объекты ({focal_points})',
-            showlegend=True
-        ))
-    
-    # Показываем текстовые зоны
-    if text_amount > 0 and 'text_positions' in locals():
-        text_x = [pos[0] for pos in text_positions]
-        text_y = [pos[1] for pos in text_positions]
+        # === ДИНАМИЧНЫЕ АННОТАЦИИ ===
+        annotations = []
         
-        fig.add_trace(go.Scatter(
-            x=text_x, y=text_y,
-            mode='markers',
-            marker=dict(size=12, color='yellow', symbol='square',
-                       line=dict(width=2, color='orange')),
-            name=f'Текст ({text_amount})',
-            showlegend=True
+        # Добавляем сетку правила третей только если она применимо
+        if rule_of_thirds_strength > 0.3:
+            fig.add_hline(y=33.33, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
+            fig.add_hline(y=66.67, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
+            fig.add_vline(x=33.33, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
+            fig.add_vline(x=66.67, line_dash="dash", line_color="rgba(255,255,255,0.6)", opacity=0.7)
+            
+            # Точки силы
+            fig.add_trace(go.Scatter(
+                x=[33.33, 66.67, 33.33, 66.67], 
+                y=[33.33, 33.33, 66.67, 66.67],
+                mode='markers', 
+                marker=dict(size=10, color='white', symbol='x', 
+                           line=dict(width=2, color='black')),
+                name='Точки силы', 
+                showlegend=True
+            ))
+        
+        # Показываем детектированные объекты
+        if focal_points > 0 and object_positions:
+            obj_x = [pos[0] for pos in object_positions]
+            obj_y = [pos[1] for pos in object_positions]
+            
+            fig.add_trace(go.Scatter(
+                x=obj_x, y=obj_y,
+                mode='markers',
+                marker=dict(size=15, color='cyan', symbol='star',
+                           line=dict(width=2, color='blue')),
+                name=f'Объекты ({focal_points})',
+                showlegend=True
+            ))
+        
+        # Показываем текстовые зоны
+        if text_amount > 0 and text_positions:
+            text_x = [pos[0] for pos in text_positions]
+            text_y = [pos[1] for pos in text_positions]
+            
+            fig.add_trace(go.Scatter(
+                x=text_x, y=text_y,
+                mode='markers',
+                marker=dict(size=12, color='yellow', symbol='square',
+                           line=dict(width=2, color='orange')),
+                name=f'Текст ({text_amount})',
+                showlegend=True
+            ))
+        
+        # === АДАПТИВНЫЕ АННОТАЦИИ ===
+        max_attention_pos = np.unravel_index(attention_map.argmax(), attention_map.shape)
+        max_x = x[max_attention_pos[1]]
+        max_y = y[max_attention_pos[0]]
+        
+        annotations.append(dict(
+            x=max_x, y=max_y,
+            text="🎯 Пик внимания",
+            showarrow=True,
+            arrowhead=2,
+            arrowcolor="red",
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="red"
         ))
-    
-    # === АДАПТИВНЫЕ АННОТАЦИИ ===
-    max_attention_pos = np.unravel_index(attention_map.argmax(), attention_map.shape)
-    max_x = x[max_attention_pos[1]]
-    max_y = y[max_attention_pos[0]]
-    
-    annotations.append(dict(
-        x=max_x, y=max_y,
-        text="🎯 Пик внимания",
-        showarrow=True,
-        arrowhead=2,
-        arrowcolor="red",
-        bgcolor="rgba(255,255,255,0.8)",
-        bordercolor="red"
-    ))
-    
-    fig.update_layout(
-        title=f"🎯 Динамичная карта внимания • Объекты: {focal_points} • Текст: {text_amount}",
-        xaxis_title="Горизонтальная позиция (%)",
-        yaxis_title="Вертикальная позиция (%)",
-        height=600, 
-        template=self.plot_config['template'],
-        xaxis=dict(range=[0, 100]),
-        yaxis=dict(range=[0, 100], scaleanchor="x", scaleratio=1),
-        annotations=annotations,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
+        
+        fig.update_layout(
+            title=f"🎯 Динамичная карта внимания • Объекты: {focal_points} • Текст: {text_amount}",
+            xaxis_title="Горизонтальная позиция (%)",
+            yaxis_title="Вертикальная позиция (%)",
+            height=600, 
+            template=self.plot_config['template'],
+            xaxis=dict(range=[0, 100]),
+            yaxis=dict(range=[0, 100], scaleanchor="x", scaleratio=1),
+            annotations=annotations,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
         )
-    )
-    
-    return fig
+        
+        return fig
     
     def create_color_psychology_analysis(self, color_data: Dict[str, Any]) -> go.Figure:
         """Создание анализа цветовой психологии."""
