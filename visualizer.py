@@ -1,4 +1,4 @@
-# visualizer.py
+# visualizer.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 """
 Модуль визуализации для Creative Performance Predictor.
 Продвинутые интерактивные графики, heatmaps и 3D визуализации.
@@ -179,7 +179,7 @@ class AdvancedVisualizer:
         
         return fig
     
- def create_attention_heatmap(self, image_features: Dict, predictions: Dict) -> go.Figure:
+    def create_attention_heatmap(self, image_features: Dict, predictions: Dict) -> go.Figure:
         """Создание динамичного heatmap зон внимания на основе реального анализа изображения."""
         
         # Симулируем тепловую карту на основе характеристик изображения
