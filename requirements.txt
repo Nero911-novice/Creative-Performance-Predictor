@@ -1,32 +1,33 @@
-# Creative Performance Predictor 2.0 - СКОРРЕКТИРОВАННЫЕ ЗАВИСИМОСТИ
-# Версия для стабильной работы на Streamlit Cloud
+# Creative Performance Predictor 2.0 - ОПТИМИЗИРОВАННЫЕ ЗАВИСИМОСТИ
+# Версия для Streamlit Cloud (только CPU)
 
-# === ОСНОВНЫЕ ЗАВИСИМОСТИ ===
 streamlit>=1.28.0
-pandas>=2.0.0,<2.3.0
-numpy<2.0.0,>=1.24.0
+pandas>=2.0.0
+numpy>=1.24.0
 
-# === МАШИННОЕ ОБУЧЕНИЕ ===
-scikit-learn<1.5.0,>=1.3.0
+# --- Машинное обучение ---
+scikit-learn>=1.3.0
+xgboost>=1.7.0
 joblib>=1.3.0
-xgboost<2.1.0,>=1.7.0
 
-# === ОБРАБОТКА ИЗОБРАЖЕНИЙ ===
-Pillow<11.0.0,>=9.0.0
-opencv-python-headless<4.10.0,>=4.8.0
+# --- Компьютерное зрение и OCR ---
 
-# === ВИЗУАЛИЗАЦИЯ ===
-plotly<6.0.0,>=5.15.0
-matplotlib<3.9.0,>=3.7.0
-seaborn<0.14.0,>=0.12.0
-scipy<1.14.0,>=1.11.0
+# Указываем PyTorch и Torchvision для CPU.
+# pip сам найдет совместимую с Python 3.13+ версию
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# === OCR И КОМПЬЮТЕРНОЕ ЗРЕНИЕ ===
-pytesseract>=0.3.10
-ultralytics<8.3.0,>=8.0.0
+# Основные CV библиотеки
 easyocr>=1.7.0
+opencv-python-headless>=4.8.0
+ultralytics>=8.0.0
+Pillow>=9.0.0
 
-# === PyTorch для EasyOCR (CPU версия) ===
---extra-index-url https://download.pytorch.org/whl/cpu
-torch<2.2.0,>=2.0.0
-torchvision<0.17.0,>=0.15.0
+# Fallback OCR
+pytesseract>=0.3.10
+
+# --- Визуализация и вычисления ---
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scipy>=1.11.0
