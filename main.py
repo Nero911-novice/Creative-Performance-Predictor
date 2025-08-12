@@ -1,7 +1,7 @@
 # main.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 """
 Основное приложение Creative Performance Predictor.
-Обновленный Streamlit интерфейс для работы с революционными модулями.
+Обновленный Streamlit интерфейс для работы с модулями.
 """
 
 import streamlit as st
@@ -125,7 +125,7 @@ class AdvancedCreativePerformanceApp:
     def run(self):
         """Запуск основного приложения."""
         st.markdown(f'<h1 class="main-header">{PAGE_ICON} {APP_TITLE} 2.0</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="text-align: center; color: #666; font-size: 1.1em;">Революционная система анализа креативов с ИИ</p>', unsafe_allow_html=True)
+        st.markdown('<p style="text-align: center; color: #666; font-size: 1.1em;">Система анализа креативов с ИИ</p>', unsafe_allow_html=True)
         
         self._render_sidebar()
         
@@ -216,7 +216,7 @@ class AdvancedCreativePerformanceApp:
                 st.metric("Проанализировано", f"{history_count} креативов")
             
             st.markdown("---")
-            st.caption(f"Версия {APP_VERSION} • Революционный ИИ")
+            st.caption(f"Версия {APP_VERSION} • ИИ")
     
     def _render_home_page(self):
         """Отрисовка улучшенной главной страницы."""
@@ -225,7 +225,7 @@ class AdvancedCreativePerformanceApp:
         with col1:
             st.markdown("## 🎨 Добро пожаловать в Creative Performance Predictor 2.0!")
             st.markdown("""
-            Революционная система анализа креативов, использующая передовые технологии:
+            Система анализа креативов, использующая передовые технологии:
             
             🧠 **Искусственный интеллект** — Ансамбль ML моделей для точных предсказаний  
             👁️ **Компьютерное зрение** — YOLO детекция объектов и EasyOCR анализ текста  
@@ -291,7 +291,7 @@ class AdvancedCreativePerformanceApp:
     
     def _render_analysis_page(self):
         """Отрисовка улучшенной страницы анализа."""
-        st.header("🔍 Революционный анализ креативного материала")
+        st.header("🔍 Анализ креативного материала")
         
         # Расширенные настройки
         col1, col2, col3 = st.columns(3)
@@ -369,7 +369,7 @@ class AdvancedCreativePerformanceApp:
                         st.session_state.detailed_analysis = detailed_analysis
 
                 # Кнопка анализа
-                if st.button("🚀 Запустить революционный анализ", type="primary", use_container_width=True):
+                if st.button("🚀 Запустить анализ", type="primary", use_container_width=True):
                     self._perform_advanced_analysis(image, category, region, target_audience)
                 
             except Exception as e:
@@ -378,7 +378,7 @@ class AdvancedCreativePerformanceApp:
                     st.code(traceback.format_exc())
         
         else:
-            st.info("👆 **Загрузите изображение для начала революционного анализа**")
+            st.info("👆 **Загрузите изображение для начала анализа**")
             
             col_demo, col_space = st.columns([1, 1])
             with col_demo:
@@ -396,7 +396,7 @@ class AdvancedCreativePerformanceApp:
         
         progress_container = st.container()
         with progress_container:
-            progress_bar = st.progress(0, text="🔄 Инициализация революционного анализа...")
+            progress_bar = st.progress(0, text="🔄 Инициализация анализа...")
         
         try:
             def update_progress(percent, text):
@@ -417,7 +417,7 @@ class AdvancedCreativePerformanceApp:
             update_progress(30, "🏗️ ИИ анализ композиции и объектов...")
             composition_analysis = self.analyzer.analyze_composition()
             
-            # Этап 4: Революционный анализ текста
+            # Этап 4: Анализ текста
             update_progress(45, "📝 OCR и анализ текстовых элементов...")
             text_analysis = self.analyzer.analyze_text()
             
@@ -475,7 +475,7 @@ class AdvancedCreativePerformanceApp:
                 'analysis_time': analysis_time
             })
             
-            update_progress(100, "✅ Революционный анализ завершен!")
+            update_progress(100, "✅ Анализ завершен!")
             time.sleep(0.5)
             progress_container.empty()
             
@@ -491,7 +491,7 @@ class AdvancedCreativePerformanceApp:
 
     def _show_quick_results(self, predictions: Dict, analysis_time: float):
         """Показ быстрых результатов анализа."""
-        st.success("🎉 Революционный анализ успешно завершен!")
+        st.success("🎉 Анализ успешно завершен!")
         
         # Быстрые метрики
         col1, col2, col3, col4 = st.columns(4)
@@ -568,7 +568,7 @@ class AdvancedCreativePerformanceApp:
                 st.rerun()
             return
         
-        st.header("📊 Детальные результаты революционного анализа")
+        st.header("📊 Детальные результаты анализа")
         
         analysis_results = st.session_state.analysis_results
         predictions = analysis_results['predictions']
@@ -959,7 +959,7 @@ class AdvancedCreativePerformanceApp:
         with col1:
             st.markdown(f"""
             ## 🎨 Creative Performance Predictor 2.0
-            **Версия {APP_VERSION}** • Революционная система анализа креативов
+            **Версия {APP_VERSION}** • Система анализа креативов
             
             ### 🧠 Технологический стек
             
@@ -1074,7 +1074,7 @@ class AdvancedCreativePerformanceApp:
             draw.text((x, y), main_text, fill="white", font=font_large)
             
             # Подзаголовок
-            sub_text = "Революционный анализ креативов"
+            sub_text = "Анализ креативов"
             bbox = draw.textbbox((0, 0), sub_text, font=font_medium)
             x = (width - (bbox[2] - bbox[0])) / 2
             y = height / 2.5
