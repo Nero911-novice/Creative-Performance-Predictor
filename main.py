@@ -1,4 +1,4 @@
-# main.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
+# main.py - ИСПРАВЛЕННАЯ ПОЛНАЯ ВЕРСИЯ
 """
 Основное приложение Creative Performance Predictor.
 Обновленный Streamlit интерфейс для работы с модулями.
@@ -16,26 +16,99 @@ import traceback
 import plotly.graph_objects as go
 warnings.filterwarnings('ignore')
 
-# Попытка импорта с обработкой ошибок
+# Попытка импорта с детальной обработкой ошибок
+DEPENDENCIES_OK = True
+error_messages = []
+
 try:
     from image_analyzer import AdvancedImageAnalyzer
-    from ml_engine import AdvancedMLEngine  
+    print("✅ AdvancedImageAnalyzer импортирован успешно")
+except ImportError as e:
+    error_messages.append(f"ImageAnalyzer: {e}")
+    AdvancedImageAnalyzer = None
+    DEPENDENCIES_OK = False
+
+try:
+    from ml_engine import AdvancedMLEngine
+    print("✅ AdvancedMLEngine импортирован успешно")
+except ImportError as e:
+    error_messages.append(f"MLEngine: {e}")
+    AdvancedMLEngine = None
+    DEPENDENCIES_OK = False
+
+try:
     from visualizer import AdvancedVisualizer
+    print("✅ AdvancedVisualizer импортирован успешно")
+except ImportError as e:
+    error_messages.append(f"Visualizer: {e}")
+    AdvancedVisualizer = None
+    DEPENDENCIES_OK = False
+
+try:
     from recommender import IntelligentRecommendationEngine
+    print("✅ IntelligentRecommendationEngine импортирован успешно")
+except ImportError as e:
+    error_messages.append(f"RecommendationEngine: {e}")
+    IntelligentRecommendationEngine = None
+    DEPENDENCIES_OK = False
+
+try:
     from config import (
         APP_TITLE, APP_VERSION, PAGE_ICON, SUPPORTED_IMAGE_FORMATS,
         MAX_IMAGE_SIZE, CUSTOM_CSS, DEMO_INSIGHTS, COLOR_SCHEME
     )
-    DEPENDENCIES_OK = True
-    print("✅ Все модули успешно импортированы")
+    print("✅ Конфигурация импортирована успешно")
 except ImportError as e:
-    st.error(f"Критическая ошибка импорта: {e}")
-    st.error("Убедитесь, что все зависимости установлены: pip install -r requirements.txt")
+    error_messages.append(f"Config: {e}")
+    # Fallback конфигурация
+    APP_TITLE = "Creative Performance Predictor"
+    APP_VERSION = "2.0.0"
+    PAGE_ICON = "🎨"
+    SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'webp']
+    MAX_IMAGE_SIZE = 15 * 1024 * 1024
+    CUSTOM_CSS = ""
+    DEMO_INSIGHTS = ["Система анализирует креативы с помощью ИИ"]
+    COLOR_SCHEME = {'primary': '#1f77b4'}
     DEPENDENCIES_OK = False
-    # Инициализация заглушек
-    AdvancedImageAnalyzer, AdvancedMLEngine, AdvancedVisualizer, IntelligentRecommendationEngine = None, None, None, None
-    APP_TITLE, APP_VERSION, PAGE_ICON, SUPPORTED_IMAGE_FORMATS = "Error", "0.0", "❌", []
-    MAX_IMAGE_SIZE, CUSTOM_CSS, DEMO_INSIGHTS, COLOR_SCHEME = 0, "", [], {}
+
+# Отображение ошибок импорта
+if not DEPENDENCIES_OK:
+    st.set_page_config(page_title="Ошибка", page_icon="❌", layout="wide")
+    st.error("🚨 Критические ошибки импорта модулей")
+    st.error("Не удалось импортировать все необходимые модули:")
+    for error in error_messages:
+        st.code(error)
+    
+    st.markdown("### 🛠 Инструкции по исправлению:")
+    st.markdown("""
+    1. **Проверьте установку зависимостей:**
+       ```bash
+       pip install -r requirements.txt
+       ```
+    
+    2. **Убедитесь, что все файлы модулей присутствуют:**
+       - `image_analyzer.py`
+       - `ml_engine.py`
+       - `visualizer.py`
+       - `recommender.py`
+       - `config.py`
+    
+    3. **Проверьте синтаксис в модулях:**
+       ```bash
+       python -m py_compile image_analyzer.py
+       python -m py_compile ml_engine.py
+       python -m py_compile visualizer.py
+       python -m py_compile recommender.py
+       python -m py_compile config.py
+       ```
+    
+    4. **Перезапустите приложение после исправления**
+    """)
+    
+    if st.button("🔄 Попробовать перезагрузить модули"):
+        st.rerun()
+    
+    st.stop()
 
 # Конфигурация страницы
 st.set_page_config(
@@ -58,12 +131,18 @@ def get_advanced_app_engines():
     try:
         print("🔧 Инициализация продвинутых движков...")
         
+        if AdvancedImageAnalyzer is None:
+            raise ImportError("AdvancedImageAnalyzer недоступен")
         analyzer = AdvancedImageAnalyzer()
         print("✅ AdvancedImageAnalyzer инициализирован")
         
+        if IntelligentRecommendationEngine is None:
+            raise ImportError("IntelligentRecommendationEngine недоступен")
         recommender = IntelligentRecommendationEngine()  
         print("✅ IntelligentRecommendationEngine инициализирован")
         
+        if AdvancedMLEngine is None:
+            raise ImportError("AdvancedMLEngine недоступен")
         ml_engine = AdvancedMLEngine()
         print("✅ AdvancedMLEngine инициализирован")
         
@@ -74,6 +153,8 @@ def get_advanced_app_engines():
                 st.session_state.training_results = training_results
                 print("🎉 Обучение завершено!")
         
+        if AdvancedVisualizer is None:
+            raise ImportError("AdvancedVisualizer недоступен")
         visualizer = AdvancedVisualizer()
         print("✅ AdvancedVisualizer инициализирован")
         
@@ -91,13 +172,11 @@ class AdvancedCreativePerformanceApp:
     
     def __init__(self):
         """Инициализация приложения и продвинутых компонентов."""
-        if not DEPENDENCIES_OK:
-            st.stop()
-            
         try:
             self.analyzer, self.ml_engine, self.visualizer, self.recommender = get_advanced_app_engines()
         except Exception as e:
             st.error("Не удалось инициализировать движки приложения")
+            st.error(f"Детали ошибки: {e}")
             st.stop()
             
         self._initialize_session_state()
@@ -142,7 +221,12 @@ class AdvancedCreativePerformanceApp:
         
         page_function = page_map.get(page)
         if page_function:
-            page_function()
+            try:
+                page_function()
+            except Exception as e:
+                st.error(f"Ошибка на странице '{page}': {e}")
+                if st.session_state.advanced_mode:
+                    st.code(traceback.format_exc())
     
     def _render_sidebar(self):
         """Отрисовка продвинутой боковой панели."""
@@ -179,15 +263,18 @@ class AdvancedCreativePerformanceApp:
             st.markdown("### 📈 Статус системы")
             
             # Статус компонентов
-            if self.ml_engine.is_trained:
+            if self.ml_engine and self.ml_engine.is_trained:
                 st.success("✅ ML модели обучены")
                 if st.session_state.advanced_mode:
                     if hasattr(self.ml_engine, 'model_performance'):
-                        avg_r2 = np.mean([
-                            np.mean([result.get('r2_score', 0) for result in target_results.values() if 'r2_score' in result])
-                            for target_results in self.ml_engine.model_performance.values()
-                        ])
-                        st.metric("Средний R²", f"{avg_r2:.3f}")
+                        try:
+                            avg_r2 = np.mean([
+                                np.mean([result.get('r2_score', 0) for result in target_results.values() if 'r2_score' in result])
+                                for target_results in self.ml_engine.model_performance.values()
+                            ])
+                            st.metric("Средний R²", f"{avg_r2:.3f}")
+                        except:
+                            st.metric("Средний R²", "N/A")
             else:
                 st.warning("⏳ Модели обучаются...")
 
@@ -255,11 +342,16 @@ class AdvancedCreativePerformanceApp:
             st.markdown("### 📊 Возможности системы")
             
             # Интерактивные метрики
+            try:
+                advanced_colors = getattr(self.visualizer, 'advanced_colors', COLOR_SCHEME)
+            except:
+                advanced_colors = COLOR_SCHEME
+            
             metrics_data = [
-                ("🎯", "Точность", "R² > 0.85", self.advanced_colors.get('performance_excellent', '#00C851')),
-                ("⚡", "Скорость", "< 3 сек", self.advanced_colors.get('ctr_color', '#2196F3')),
-                ("🔧", "Рекомендаций", "15+ советов", self.advanced_colors.get('engagement_color', '#FF9800')),
-                ("📱", "Форматы", "JPG, PNG, WEBP", self.advanced_colors.get('trust_color', '#3F51B5'))
+                ("🎯", "Точность", "R² > 0.85", advanced_colors.get('performance_excellent', '#00C851')),
+                ("⚡", "Скорость", "< 3 сек", advanced_colors.get('ctr_color', '#2196F3')),
+                ("🔧", "Рекомендаций", "15+ советов", advanced_colors.get('engagement_color', '#FF9800')),
+                ("📱", "Форматы", "JPG, PNG, WEBP", advanced_colors.get('trust_color', '#3F51B5'))
             ]
             
             for icon, metric, value, color in metrics_data:
@@ -287,7 +379,10 @@ class AdvancedCreativePerformanceApp:
     @property
     def advanced_colors(self):
         """Свойство для доступа к цветам visualizer."""
-        return getattr(self.visualizer, 'advanced_colors', COLOR_SCHEME)
+        try:
+            return getattr(self.visualizer, 'advanced_colors', COLOR_SCHEME)
+        except:
+            return COLOR_SCHEME
     
     def _render_analysis_page(self):
         """Отрисовка улучшенной страницы анализа."""
@@ -347,7 +442,6 @@ class AdvancedCreativePerformanceApp:
                     # Базовая информация
                     st.write(f"**Размер:** {image.size[0]}×{image.size[1]}px")
                     st.write(f"**Соотношение сторон:** {image.size[0]/image.size[1]:.2f}")
-                    st.write(f"**Формат:** {image.format}")
                     
                     # Размер файла
                     file_size_mb = uploaded_file.size / (1024 * 1024)
@@ -580,12 +674,17 @@ class AdvancedCreativePerformanceApp:
         category = st.session_state.get('category', 'Общая')
         benchmarks = self._get_category_benchmarks(category)
         
-        dashboard_fig = self.visualizer.create_performance_dashboard(
-            predictions, 
-            analysis_results.get('confidence_intervals'),
-            benchmarks
-        )
-        st.plotly_chart(dashboard_fig, use_container_width=True)
+        try:
+            dashboard_fig = self.visualizer.create_performance_dashboard(
+                predictions, 
+                analysis_results.get('confidence_intervals'),
+                benchmarks
+            )
+            st.plotly_chart(dashboard_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания дашборда: {e}")
+            if st.session_state.advanced_mode:
+                st.code(traceback.format_exc())
         
         # Табы с детальным анализом
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -617,36 +716,42 @@ class AdvancedCreativePerformanceApp:
         confidence_intervals = analysis_results.get('confidence_intervals', {})
         
         # Детальный график предсказаний
-        detailed_pred_fig = self.visualizer.create_performance_prediction_detailed(
-            predictions, feature_importance, confidence_intervals
-        )
-        st.plotly_chart(detailed_pred_fig, use_container_width=True)
+        try:
+            detailed_pred_fig = self.visualizer.create_performance_prediction_detailed(
+                predictions, feature_importance, confidence_intervals
+            )
+            st.plotly_chart(detailed_pred_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания графика предсказаний: {e}")
         
         if st.session_state.advanced_mode:
             # Экспертная информация
             st.markdown("### 🔬 Экспертная информация")
             
-            explanation = self.ml_engine.explain_prediction(st.session_state.image_features)
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("**Уверенность модели:**")
-                confidence = explanation.get('model_confidence', 0.8)
-                st.progress(confidence, text=f"{confidence:.1%}")
+            try:
+                explanation = self.ml_engine.explain_prediction(st.session_state.image_features)
                 
-                st.markdown("**Категория эффективности:**")
-                st.info(explanation.get('performance_category', 'Средняя'))
-            
-            with col2:
-                st.markdown("**Приоритет рекомендаций:**")
-                priority = explanation.get('recommendation_priority', 'Средний')
-                priority_color = {'Высокий': '🔴', 'Средний': '🟡', 'Низкий': '🟢'}
-                st.markdown(f"{priority_color.get(priority, '🟡')} {priority}")
+                col1, col2 = st.columns(2)
                 
-                st.markdown("**Ключевые инсайты:**")
-                for insight in explanation.get('key_insights', [])[:3]:
-                    st.markdown(f"• {insight}")
+                with col1:
+                    st.markdown("**Уверенность модели:**")
+                    confidence = explanation.get('model_confidence', 0.8)
+                    st.progress(confidence, text=f"{confidence:.1%}")
+                    
+                    st.markdown("**Категория эффективности:**")
+                    st.info(explanation.get('performance_category', 'Средняя'))
+                
+                with col2:
+                    st.markdown("**Приоритет рекомендаций:**")
+                    priority = explanation.get('recommendation_priority', 'Средний')
+                    priority_color = {'Высокий': '🔴', 'Средний': '🟡', 'Низкий': '🟢'}
+                    st.markdown(f"{priority_color.get(priority, '🟡')} {priority}")
+                    
+                    st.markdown("**Ключевые инсайты:**")
+                    for insight in explanation.get('key_insights', [])[:3]:
+                        st.markdown(f"• {insight}")
+            except Exception as e:
+                st.error(f"Ошибка объяснения предсказаний: {e}")
 
     def _render_color_psychology_tab(self, analysis_results: Dict):
         """Рендер таба цветовой психологии."""
@@ -655,8 +760,11 @@ class AdvancedCreativePerformanceApp:
         color_data = analysis_results['color_analysis']
         
         # График цветовой психологии
-        color_fig = self.visualizer.create_color_psychology_analysis(color_data)
-        st.plotly_chart(color_fig, use_container_width=True)
+        try:
+            color_fig = self.visualizer.create_color_psychology_analysis(color_data)
+            st.plotly_chart(color_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания анализа цветов: {e}")
         
         # Дополнительная информация о цветах
         if 'dominant_colors' in color_data and color_data['dominant_colors']:
@@ -684,8 +792,11 @@ class AdvancedCreativePerformanceApp:
         composition_data = analysis_results['composition_analysis']
         
         # Анализ композиции (используем существующий 3D график)
-        comp_fig = self.visualizer.create_composition_analysis_3d(composition_data)
-        st.plotly_chart(comp_fig, use_container_width=True)
+        try:
+            comp_fig = self.visualizer.create_composition_analysis_3d(composition_data)
+            st.plotly_chart(comp_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания анализа композиции: {e}")
         
         # Детали композиции
         col1, col2 = st.columns(2)
@@ -761,11 +872,14 @@ class AdvancedCreativePerformanceApp:
         st.info("Heatmap показывает области, которые привлекают максимальное внимание пользователей на основе принципов нейромаркетинга")
         
         # Создаем heatmap
-        heatmap_fig = self.visualizer.create_attention_heatmap(
-            st.session_state.image_features, 
-            analysis_results['predictions']
-        )
-        st.plotly_chart(heatmap_fig, use_container_width=True)
+        try:
+            heatmap_fig = self.visualizer.create_attention_heatmap(
+                st.session_state.image_features, 
+                analysis_results['predictions']
+            )
+            st.plotly_chart(heatmap_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания heatmap: {e}")
         
         # Объяснение зон
         st.markdown("### 🧠 Объяснение зон внимания")
@@ -826,8 +940,11 @@ class AdvancedCreativePerformanceApp:
             st.metric("Средняя уверенность", f"{avg_confidence:.1%}")
         
         # Карта влияния рекомендаций
-        impact_fig = self.visualizer.create_recommendation_impact_chart(recommendations)
-        st.plotly_chart(impact_fig, use_container_width=True)
+        try:
+            impact_fig = self.visualizer.create_recommendation_impact_chart(recommendations)
+            st.plotly_chart(impact_fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Ошибка создания карты влияния: {e}")
         
         # Группировка рекомендаций
         st.subheader("📋 Детальные рекомендации")
@@ -854,8 +971,11 @@ class AdvancedCreativePerformanceApp:
         # Дорожная карта внедрения
         if st.session_state.advanced_mode:
             st.subheader("🗺️ Дорожная карта внедрения")
-            roadmap = self.recommender.create_implementation_roadmap(recommendations)
-            self._render_implementation_roadmap(roadmap)
+            try:
+                roadmap = self.recommender.create_implementation_roadmap(recommendations)
+                self._render_implementation_roadmap(roadmap)
+            except Exception as e:
+                st.error(f"Ошибка создания дорожной карты: {e}")
 
     def _render_recommendation_card(self, rec, index: int):
         """Рендер карточки рекомендации."""
@@ -920,35 +1040,41 @@ class AdvancedCreativePerformanceApp:
         
         analysis_results = st.session_state.analysis_results
         
-        if viz_type == "Общий дашборд":
-            dashboard_fig = self.visualizer.create_performance_dashboard(
-                analysis_results['predictions'],
-                analysis_results.get('confidence_intervals'),
-                self._get_category_benchmarks(st.session_state.get('category', 'Общая'))
-            )
-            st.plotly_chart(dashboard_fig, use_container_width=True)
+        try:
+            if viz_type == "Общий дашборд":
+                dashboard_fig = self.visualizer.create_performance_dashboard(
+                    analysis_results['predictions'],
+                    analysis_results.get('confidence_intervals'),
+                    self._get_category_benchmarks(st.session_state.get('category', 'Общая'))
+                )
+                st.plotly_chart(dashboard_fig, use_container_width=True)
+            
+            elif viz_type == "Цветовая психология":
+                color_fig = self.visualizer.create_color_psychology_analysis(
+                    analysis_results['color_analysis']
+                )
+                st.plotly_chart(color_fig, use_container_width=True)
+            
+            elif viz_type == "Композиционный анализ":
+                comp_fig = self.visualizer.create_composition_analysis_3d(
+                    analysis_results['composition_analysis']
+                )
+                st.plotly_chart(comp_fig, use_container_width=True)
+            
+            elif viz_type == "Карта внимания":
+                heatmap_fig = self.visualizer.create_attention_heatmap(
+                    st.session_state.image_features,
+                    analysis_results['predictions']
+                )
+                st.plotly_chart(heatmap_fig, use_container_width=True)
+            
+            elif viz_type == "Сравнительный анализ":
+                self._render_comparative_analysis()
         
-        elif viz_type == "Цветовая психология":
-            color_fig = self.visualizer.create_color_psychology_analysis(
-                analysis_results['color_analysis']
-            )
-            st.plotly_chart(color_fig, use_container_width=True)
-        
-        elif viz_type == "Композиционный анализ":
-            comp_fig = self.visualizer.create_composition_analysis_3d(
-                analysis_results['composition_analysis']
-            )
-            st.plotly_chart(comp_fig, use_container_width=True)
-        
-        elif viz_type == "Карта внимания":
-            heatmap_fig = self.visualizer.create_attention_heatmap(
-                st.session_state.image_features,
-                analysis_results['predictions']
-            )
-            st.plotly_chart(heatmap_fig, use_container_width=True)
-        
-        elif viz_type == "Сравнительный анализ":
-            self._render_comparative_analysis()
+        except Exception as e:
+            st.error(f"Ошибка создания визуализации: {e}")
+            if st.session_state.advanced_mode:
+                st.code(traceback.format_exc())
 
     def _render_about_page(self):
         """Отрисовка страницы 'О системе'."""
@@ -1059,40 +1185,31 @@ class AdvancedCreativePerformanceApp:
             
             # Главный заголовок
             try:
-                font_large = ImageFont.load_default(size=48)
-                font_medium = ImageFont.load_default(size=24)
-                font_small = ImageFont.load_default(size=16)
+                font_large = ImageFont.load_default()
+                font_medium = ImageFont.load_default()
+                font_small = ImageFont.load_default()
             except:
                 font_large = ImageFont.load_default()
                 font_medium = ImageFont.load_default()
                 font_small = ImageFont.load_default()
             
             main_text = "DEMO CREATIVE 2.0"
-            bbox = draw.textbbox((0, 0), main_text, font=font_large)
-            x = (width - (bbox[2] - bbox[0])) / 2
-            y = height / 4
-            draw.text((x, y), main_text, fill="white", font=font_large)
+            draw.text((width//2 - 100, height//4), main_text, fill="white", font=font_large)
             
             # Подзаголовок
             sub_text = "Анализ креативов"
-            bbox = draw.textbbox((0, 0), sub_text, font=font_medium)
-            x = (width - (bbox[2] - bbox[0])) / 2
-            y = height / 2.5
-            draw.text((x, y), sub_text, fill="lightgray", font=font_medium)
+            draw.text((width//2 - 80, height//2.5), sub_text, fill="lightgray", font=font_medium)
             
             # CTA кнопка
-            button_x, button_y = width / 2, height - 120
+            button_x, button_y = width // 2, height - 120
             button_w, button_h = 220, 60
             draw.rectangle([
-                button_x - button_w/2, button_y - button_h/2, 
-                button_x + button_w/2, button_y + button_h/2
+                button_x - button_w//2, button_y - button_h//2, 
+                button_x + button_w//2, button_y + button_h//2
             ], fill="red", outline="darkred", width=2)
             
             cta_text = "ПОПРОБОВАТЬ СЕЙЧАС"
-            cta_bbox = draw.textbbox((0, 0), cta_text, font=font_small)
-            cta_x = button_x - (cta_bbox[2] - cta_bbox[0]) / 2
-            cta_y = button_y - (cta_bbox[3] - cta_bbox[1]) / 2
-            draw.text((cta_x, cta_y), cta_text, fill="white", font=font_small)
+            draw.text((button_x - 85, button_y - 10), cta_text, fill="white", font=font_small)
             
             # Декоративные элементы
             for i in range(3):
@@ -1165,3 +1282,5 @@ if __name__ == "__main__":
     if DEPENDENCIES_OK:
         app = AdvancedCreativePerformanceApp()
         app.run()
+    else:
+        st.error("Приложение не может быть запущено из-за ошибок импорта.")
